@@ -36,7 +36,7 @@ class ResultadoCategoria(BaseModel):
 class DetalleVerificacionQwen(BaseModel):
     categoria: str
     probabilidad_beto: float
-    confirma: bool
+    confirma: Optional[bool]
     razon: str
 
 

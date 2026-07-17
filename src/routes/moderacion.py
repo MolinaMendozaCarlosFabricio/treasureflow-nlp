@@ -6,6 +6,7 @@ import time
 from fastapi import APIRouter, Request
 
 from src.core.logic import moderar_texto
+from src.models.qwen_verifier import esta_disponible
 from src.schemas.moderacion_schema import (
     HealthResponse,
     ModerarTextoRequest,
@@ -23,7 +24,7 @@ def moderar(request: Request, payload: ModerarTextoRequest) -> ModerarTextoRespo
     texto_limpio = limpiar_espacios(payload.texto)
 
     inicio = time.perf_counter()
-    resultado = moderar_texto(texto_limpio, request.app.state.beto, request.app.state.qwen)
+    resultado = moderar_texto(texto_limpio, request.app.state.beto)
     tiempo_total_ms = (time.perf_counter() - inicio) * 1000
 
     logger.info(
@@ -47,10 +48,9 @@ def moderar(request: Request, payload: ModerarTextoRequest) -> ModerarTextoRespo
 @router.get("/health", response_model=HealthResponse)
 def health(request: Request) -> HealthResponse:
     beto_cargado = getattr(request.app.state, "beto", None) is not None
-    qwen = getattr(request.app.state, "qwen", None)
 
     return HealthResponse(
         status="ok" if beto_cargado else "modelo_no_cargado",
         modelo_cargado=beto_cargado,
-        qwen_habilitado=qwen.disponible() if qwen is not None else False,
+        qwen_habilitado=esta_disponible(),
     )

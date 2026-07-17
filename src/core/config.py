@@ -32,7 +32,7 @@ UMBRALES_POR_CATEGORIA = {
 
 # Margen alrededor del umbral que define una probabilidad como "zona dudosa"
 # y dispara la verificacion opcional con Qwen.
-MARGEN_ZONA_DUDOSA = 0.15
+MARGEN_ZONA_DUDOSA = 0.20
 
 MAX_LONGITUD_TEXTO = 1000
 

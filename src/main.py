@@ -11,8 +11,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from src.core.config import HABILITAR_QWEN
+from src.models import qwen_verifier
 from src.models.beto_classifier import ClasificadorBeto
-from src.models.qwen_verifier import VerificadorQwen
 from src.routes.moderacion import router as moderacion_router
 
 logging.basicConfig(
@@ -27,9 +27,9 @@ async def lifespan(app: FastAPI):
     logger.info("Cargando modelo BETO...")
     app.state.beto = ClasificadorBeto()
 
-    app.state.qwen = VerificadorQwen()
     if HABILITAR_QWEN:
-        logger.info("Verificacion con Qwen habilitada (el modelo se carga en la primera consulta que la necesite).")
+        logger.info("HABILITAR_QWEN=true, cargando modelo Qwen...")
+        qwen_verifier.cargar_modelo_qwen()
     else:
         logger.info("Verificacion con Qwen deshabilitada (HABILITAR_QWEN=false).")
 

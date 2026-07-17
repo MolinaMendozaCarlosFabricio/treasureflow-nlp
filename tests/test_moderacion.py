@@ -25,6 +25,11 @@ def test_health_confirma_modelo_cargado(client):
     cuerpo = respuesta.json()
     assert cuerpo["modelo_cargado"] is True
     assert cuerpo["status"] == "ok"
+    # No asumimos un valor fijo para qwen_habilitado: depende de HABILITAR_QWEN
+    # en el .env de quien corra el test. Esa garantia especifica (que con
+    # HABILITAR_QWEN=false no se toca Qwen) ya se prueba de forma determinista,
+    # sin depender del .env local, en tests/test_qwen_verifier.py.
+    assert isinstance(cuerpo["qwen_habilitado"], bool)
 
 
 def test_texto_neutro_permite(client):

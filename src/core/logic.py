@@ -9,7 +9,7 @@ import logging
 
 from src.core.config import LABEL_COLUMNS, MARGEN_ZONA_DUDOSA, UMBRALES_POR_CATEGORIA
 from src.models.beto_classifier import ClasificadorBeto
-from src.models.qwen_verifier import VerificadorQwen
+from src.models.qwen_verifier import esta_disponible, verificar_con_qwen
 
 logger = logging.getLogger("moderacion.logic")
 
@@ -18,7 +18,7 @@ def en_zona_dudosa(probabilidad: float, umbral: float) -> bool:
     return abs(probabilidad - umbral) <= MARGEN_ZONA_DUDOSA
 
 
-def moderar_texto(texto: str, beto: ClasificadorBeto, qwen: VerificadorQwen) -> dict:
+def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
     resultado_beto = beto.predict(texto)
 
     categorias = {
@@ -32,7 +32,7 @@ def moderar_texto(texto: str, beto: ClasificadorBeto, qwen: VerificadorQwen) -> 
     detalle_verificacion = []
     verificado_por_qwen = False
 
-    if qwen.disponible():
+    if esta_disponible():
         for nombre in LABEL_COLUMNS:
             probabilidad = resultado_beto.probabilidades[nombre]
             umbral = UMBRALES_POR_CATEGORIA[nombre]
@@ -40,20 +40,22 @@ def moderar_texto(texto: str, beto: ClasificadorBeto, qwen: VerificadorQwen) -> 
             if not en_zona_dudosa(probabilidad, umbral):
                 continue
 
-            veredicto = qwen.verificar(texto, nombre, probabilidad)
+            confirma, razon = verificar_con_qwen(texto, nombre, probabilidad)
 
-            # Solo sobreescribimos la decision de BETO si Qwen realmente
-            # respondio -- si fallo, nos quedamos con la decision por umbral.
-            if veredicto["exito"]:
-                categorias[nombre]["activado"] = veredicto["confirma"]
+            # Solo sobreescribimos la decision de BETO si Qwen dio un
+            # veredicto valido -- si confirma es None (no disponible o
+            # respuesta no interpretable), nos quedamos con la decision
+            # original por umbral.
+            if confirma is not None:
+                categorias[nombre]["activado"] = confirma
                 verificado_por_qwen = True
 
             detalle_verificacion.append(
                 {
                     "categoria": nombre,
                     "probabilidad_beto": probabilidad,
-                    "confirma": veredicto["confirma"],
-                    "razon": veredicto["razon"],
+                    "confirma": confirma,
+                    "razon": razon,
                 }
             )
 
