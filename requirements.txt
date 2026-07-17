@@ -1,0 +1,30 @@
+# Entorno del proyecto treasureflow_nlp
+# Fine-tuning de un modelo BETO/hate-speech en espanol para moderacion
+# de contenido multilabel (grosero / amenaza / inapropiado).
+#
+# Instalacion:
+#   python -m venv .venv
+#   .venv\Scripts\activate        (Windows)
+#   pip install -r requirements.txt
+
+# Hugging Face / entrenamiento
+transformers>=4.41,<5
+datasets>=2.19,<3
+accelerate>=1.0
+huggingface_hub>=0.23
+
+# ML / datos
+torch>=2.2
+scikit-learn>=1.3
+pandas>=2.0
+numpy>=1.26
+unidecode>=1.3
+
+# Configuracion del entorno
+python-dotenv>=1.0
+
+# Para ejecutar el notebook (ipykernel es suficiente para VS Code / Jupyter
+# remoto; se omite el paquete "jupyter"/"jupyterlab" completo porque sus
+# assets estaticos de labextensions rompen la instalacion en Windows sin
+# soporte de rutas largas habilitado)
+ipykernel>=6.29
