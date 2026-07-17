@@ -20,6 +20,15 @@ treasureflow_nlp/
 │   │   └── processed/                            # salida: dataset combinado y splits train/val/test
 │   └── notebooks/
 │       └── NLP_treasureflow.ipynb                # notebook de fine-tuning
+├── src/                                          # API FastAPI que sirve el modelo entrenado
+│   ├── main.py
+│   ├── routes/
+│   ├── models/
+│   ├── schemas/
+│   ├── core/
+│   └── utils/
+├── tests/
+│   └── test_moderacion.py
 ├── requirements.txt
 └── .env.example
 ```
@@ -80,3 +89,62 @@ treasureflow_nlp/
 
 Ninguna de estas carpetas de datos ni el modelo entrenado se versionan en
 git (ver `.gitignore`); solo se mantiene su estructura mediante `.gitkeep`.
+
+## Levantar la API de moderación
+
+Una vez que existe `model_artifacts/modelo_moderacion_final/` (generado por
+el notebook de entrenamiento), se puede servir ese modelo con una API
+FastAPI sin necesidad de volver a entrenar nada.
+
+1. Con el entorno virtual activado e instalado (pasos 1-3 de
+   "Inicializar el proyecto"), levanta el servidor **desde la raíz del
+   repo**:
+
+   ```powershell
+   uvicorn src.main:app --reload
+   ```
+
+2. La API queda disponible en `http://127.0.0.1:8000`, con documentación
+   interactiva en `http://127.0.0.1:8000/docs`.
+
+3. Endpoints:
+
+   - `GET /health` — confirma que el modelo BETO está cargado y la API
+     lista para recibir tráfico.
+   - `POST /moderar` — evalúa un texto y decide si debe bloquearse.
+
+     ```json
+     // Request
+     { "texto": "texto a evaluar", "campo": "resena" }
+
+     // Response
+     {
+       "texto": "texto a evaluar",
+       "bloqueado": false,
+       "categorias": {
+         "grosero": { "probabilidad": 0.02, "activado": false },
+         "amenaza": { "probabilidad": 0.01, "activado": false },
+         "inapropiado": { "probabilidad": 0.05, "activado": false }
+       },
+       "verificado_por_qwen": false,
+       "detalle_verificacion": []
+     }
+     ```
+
+     Un texto vacío o de más de 1000 caracteres devuelve `422` con un
+     mensaje claro en vez de procesarse.
+
+4. **Verificación opcional con Qwen**: por defecto está desactivada. Para
+   habilitarla, en tu `.env` pon `HABILITAR_QWEN=true` (ver
+   `.env.example`). Solo se activa para categorías cuya probabilidad cae
+   en zona dudosa cerca de su umbral; si Qwen falla o no está disponible,
+   la API sigue respondiendo únicamente con la decisión de BETO.
+
+5. **Tests**: desde la raíz del repo, con el entorno virtual activado:
+
+   ```powershell
+   pytest tests/
+   ```
+
+   Los tests usan el modelo real de `model_artifacts/modelo_moderacion_final/`
+   (no hay mocks), así que requieren que ese modelo ya exista.

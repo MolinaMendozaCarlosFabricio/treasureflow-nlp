@@ -33,6 +33,14 @@ unidecode>=1.3
 # Busqueda de hiperparametros
 optuna>=3.6
 
+# API (servir el modelo con FastAPI)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+
+# Testing
+pytest>=8.0
+httpx>=0.27
+
 # Configuracion del entorno
 python-dotenv>=1.0
 
