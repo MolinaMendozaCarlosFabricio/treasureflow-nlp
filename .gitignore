@@ -225,3 +225,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Datasets
+training/data/processed/
+training/data/raw/
+
+# Artifacts
+model_artifacts/*/model.safetensors
