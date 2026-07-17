@@ -1,7 +1,7 @@
 """Capa opcional de verificacion con un LLM generativo (Qwen/Qwen3-0.6B).
 
 Se activa solo para categorias cuya probabilidad de BETO cae en zona dudosa
-cerca de su umbral (ver core.logic / MARGEN_ZONA_DUDOSA). Todo el modulo
+cerca de su umbral (ver core.logic / MARGENES_POR_CATEGORIA). Todo el modulo
 esta disenado para que un fallo aqui (sin conexion, modelo no disponible,
 respuesta no parseable, etc.) nunca tumbe la API -- si algo falla, se
 loggea y se retorna una senal de "sin verdicto" para que el llamador se
@@ -151,21 +151,21 @@ dobles sentidos, o frases que sugieran algo más allá de su significado
 literal. Responde ÚNICAMENTE con JSON:
 {{"confirma": true o false, "razon": "una frase breve y ESPECÍFICA sobre qué parte del texto sustenta tu decisión"}}
 """
-        )
+        ).format(categoria=categoria, definicion=definicion, texto=texto)
 
         mensajes = [{"role": "user", "content": prompt}]
         entrada = _tokenizer.apply_chat_template(
             mensajes,
             tokenize=False,
             add_generation_prompt=True,
-            enable_thinking=True,
+            enable_thinking=False,
         )
         inputs = _tokenizer(entrada, return_tensors="pt").to(_model.device)
 
         with torch.no_grad():
             salida = _model.generate(
                 **inputs,
-                max_new_tokens=60,
+                max_new_tokens=200,
                 do_sample=False,
                 temperature=0.1,
             )

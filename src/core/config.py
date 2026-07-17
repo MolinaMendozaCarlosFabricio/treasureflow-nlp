@@ -30,9 +30,15 @@ UMBRALES_POR_CATEGORIA = {
     "inapropiado": 0.30,
 }
 
-# Margen alrededor del umbral que define una probabilidad como "zona dudosa"
-# y dispara la verificacion opcional con Qwen.
-MARGEN_ZONA_DUDOSA = 0.20
+# Margen alrededor del umbral de cada categoria que define su "zona dudosa"
+# y dispara la verificacion opcional con Qwen. Es por categoria porque no
+# todas necesitan el mismo margen de duda (ej. amenaza justifica un margen
+# mas amplio dado el costo de un falso negativo).
+MARGENES_POR_CATEGORIA = {
+    "grosero": 0.15,
+    "amenaza": 0.20,
+    "inapropiado": 0.15,
+}
 
 MAX_LONGITUD_TEXTO = 1000
 

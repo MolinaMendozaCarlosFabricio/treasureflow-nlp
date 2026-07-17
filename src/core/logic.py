@@ -1,21 +1,22 @@
 """Logica de orquestacion de la moderacion de contenido.
 
-Corre BETO, decide si alguna categoria cayo en zona dudosa (umbral +/-
-MARGEN_ZONA_DUDOSA) y en ese caso consulta a Qwen para confirmar o
-descartar esa categoria puntual, sin tocar las que ya son claras.
+Corre BETO, decide si alguna categoria cayo en su zona dudosa (umbral +/-
+el margen de esa categoria en MARGENES_POR_CATEGORIA) y en ese caso
+consulta a Qwen para confirmar o descartar esa categoria puntual, sin
+tocar las que ya son claras.
 """
 
 import logging
 
-from src.core.config import LABEL_COLUMNS, MARGEN_ZONA_DUDOSA, UMBRALES_POR_CATEGORIA
+from src.core.config import LABEL_COLUMNS, MARGENES_POR_CATEGORIA, UMBRALES_POR_CATEGORIA
 from src.models.beto_classifier import ClasificadorBeto
 from src.models.qwen_verifier import esta_disponible, verificar_con_qwen
 
 logger = logging.getLogger("moderacion.logic")
 
 
-def en_zona_dudosa(probabilidad: float, umbral: float) -> bool:
-    return abs(probabilidad - umbral) <= MARGEN_ZONA_DUDOSA
+def en_zona_dudosa(probabilidad: float, umbral: float, margen: float) -> bool:
+    return abs(probabilidad - umbral) <= margen
 
 
 def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
@@ -36,8 +37,9 @@ def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
         for nombre in LABEL_COLUMNS:
             probabilidad = resultado_beto.probabilidades[nombre]
             umbral = UMBRALES_POR_CATEGORIA[nombre]
+            margen = MARGENES_POR_CATEGORIA[nombre]
 
-            if not en_zona_dudosa(probabilidad, umbral):
+            if not en_zona_dudosa(probabilidad, umbral, margen):
                 continue
 
             confirma, razon = verificar_con_qwen(texto, nombre, probabilidad)
