@@ -2,10 +2,20 @@
 # Fine-tuning de un modelo BETO/hate-speech en espanol para moderacion
 # de contenido multilabel (grosero / amenaza / inapropiado).
 #
-# Instalacion:
+# Instalacion (CPU):
 #   python -m venv .venv
 #   .venv\Scripts\activate        (Windows)
 #   pip install -r requirements.txt
+#
+# Instalacion con GPU NVIDIA (recomendado para entrenar, mucho mas rapido):
+#   El "pip install -r requirements.txt" de arriba instala el build CPU-only
+#   de torch por defecto en Windows. Para usar la GPU, despues de instalar
+#   los requirements corre (ajusta cu130 al CUDA que soporte tu driver,
+#   revisa con "nvidia-smi"; cu126 es una alternativa mas conservadora):
+#     pip uninstall torch -y
+#     pip install torch --index-url https://download.pytorch.org/whl/cu130
+#   Verificar con:
+#     python -c "import torch; print(torch.cuda.is_available())"
 
 # Hugging Face / entrenamiento
 transformers>=4.41,<5
