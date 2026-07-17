@@ -1,3 +1,11 @@
+# treasureflow_nlp project data / model artifacts
+training/data/raw/*
+!training/data/raw/.gitkeep
+training/data/processed/*
+!training/data/processed/.gitkeep
+model_artifacts/*
+!model_artifacts/.gitkeep
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
