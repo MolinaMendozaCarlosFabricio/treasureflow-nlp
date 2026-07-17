@@ -1,0 +1,16 @@
+Matrices de confusion -- split: TEST (modelo final optimizado)
+
+--- grosero ---
+        Pred 0   Pred 1
+Real 0     110       14
+Real 1       9       69
+
+--- amenaza ---
+        Pred 0   Pred 1
+Real 0     177        8
+Real 1       7       10
+
+--- inapropiado ---
+        Pred 0   Pred 1
+Real 0     190        1
+Real 1       4        7

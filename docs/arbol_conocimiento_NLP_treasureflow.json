@@ -157,7 +157,11 @@
       "hijos": [
         { "id": "sigmoid_umbral", "nombre": "Sigmoid + umbral 0.5 para convertir logits en predicciones binarias por etiqueta" },
         { "id": "metricas_clase", "nombre": "Métricas por clase: F1 (macro/micro), precision, recall" },
-        { "id": "matriz_confusion", "nombre": "Matriz de confusión multilabel (multilabel_confusion_matrix)" }
+        {
+          "id": "matriz_confusion",
+          "nombre": "Matriz de confusión multilabel (multilabel_confusion_matrix)",
+          "notas": "Refactorizada como función reutilizable mostrar_matrices_confusion(trainer, dataset_split, nombre_split); el resultado también se persiste en training/notebooks/artifacts/matriz_confusion_final.txt"
+        }
       ]
     },
     {
@@ -176,6 +180,40 @@
         { "id": "funcion_moderar", "nombre": "moderar_texto()", "notas": "Pipeline: tokenizar -> inferir -> aplicar umbral -> decidir bloquear/permitir" },
         { "id": "casos_prueba", "nombre": "Casos de prueba", "notas": "Groserías, amenazas veladas, y texto ofuscado (leetspeak, ej. 'Pvt0s')" }
       ]
+    },
+    {
+      "id": "optimizacion_hiperparametros",
+      "nombre": "Optimización de hiperparámetros (Optuna)",
+      "hijos": [
+        { "id": "optuna_framework", "nombre": "Optuna: create_study / study.optimize", "notas": "Sampler TPE por defecto; direction='maximize'; N_TRIALS ajustable" },
+        {
+          "id": "espacio_busqueda",
+          "nombre": "Espacio de búsqueda por trial",
+          "notas": "tope_amenaza (4.0-15.0), tope_inapropiado (2.0-15.0), learning_rate (1e-5-5e-5, escala log), num_epochs (3-7); tope_grosero se deja fijo en 3.0 por ya ser estable en rondas anteriores"
+        },
+        {
+          "id": "metrica_objetivo_min",
+          "nombre": "Métrica objetivo: mínimo de los 3 F1 por categoría",
+          "notas": "No se usa el promedio (f1_macro) para evitar que esconda una categoría mal atendida, mismo problema ya detectado en rondas anteriores de entrenamiento"
+        },
+        {
+          "id": "reentrenamiento_por_trial",
+          "nombre": "Modelo nuevo por trial",
+          "notas": "AutoModelForSequenceClassification desde cero + set_seed(42) antes de crearlo, para que la única fuente de variación entre trials sean los hiperparámetros"
+        },
+        {
+          "id": "pos_weight_dinamico",
+          "nombre": "Recálculo dinámico de pos_weight por trial",
+          "notas": "TrainerConPesos.compute_loss lee la variable global pos_weight_tensor en cada llamada (no la captura al definirse); se reasigna esa variable antes de cada trial sin modificar la clase original"
+        },
+        { "id": "trials_sin_checkpoint", "nombre": "save_strategy='no' durante la búsqueda", "notas": "Evita checkpoints intermedios por trial; solo se guarda el entrenamiento final" },
+        { "id": "metricas_por_trial", "nombre": "trial.set_user_attr('metricas_completas', ...)", "notas": "Persiste todas las métricas de cada trial para inspección posterior sin reentrenar" },
+        {
+          "id": "reentrenamiento_final",
+          "nombre": "Reentrenamiento final con study.best_params",
+          "notas": "Modelo nuevo desde cero con los mejores hiperparámetros, evaluado en TEST, sobreescribe model_artifacts/modelo_moderacion_final"
+        }
+      ]
     }
   ],
   "flujo_end_to_end": [
@@ -192,12 +230,15 @@
     "entrenamiento",
     "evaluacion",
     "guardado_despliegue",
-    "inferencia_negocio"
+    "inferencia_negocio",
+    "optimizacion_hiperparametros"
   ],
   "temas_para_profundizar": [
     "Métricas para clasificación multilabel desbalanceada y por qué macro-F1 puede ser engañoso con clases muy escasas",
     "Estrategias de weak supervision / etiquetado semi-automático (filtro por palabras clave)",
     "Robustez frente a ofuscación de texto (leetspeak, sustituciones de caracteres)",
-    "Trade-off precision/recall vía umbral y su relación con políticas de moderación"
+    "Trade-off precision/recall vía umbral y su relación con políticas de moderación",
+    "Optimización bayesiana de hiperparámetros (Optuna/TPE) vs. grid/random search, y el costo de reentrenar un modelo completo por cada trial",
+    "Varianza de resultados en categorías minoritarias con pocos ejemplos, incluso con semillas fijas"
   ]
 }
