@@ -1,0 +1,203 @@
+{
+  "titulo": "Árbol de Conocimiento - NLP_treasureflow.ipynb",
+  "descripcion": "Fine-tuning de un modelo BETO para moderación de contenido multilabel en español (grosero / amenaza / inapropiado)",
+  "nodos": [
+    {
+      "id": "fundamentos",
+      "nombre": "Fundamentos conceptuales",
+      "hijos": [
+        { "id": "nlp", "nombre": "Procesamiento de Lenguaje Natural (NLP)", "notas": "Tarea general: clasificación de texto" },
+        { "id": "aprendizaje_supervisado", "nombre": "Aprendizaje supervisado", "notas": "Clasificación multilabel: varias etiquetas activas simultáneamente, no excluyentes" },
+        { "id": "transfer_learning", "nombre": "Transfer learning / Fine-tuning", "notas": "Partir de un modelo preentrenado y reentrenarlo para una tarea específica" },
+        { "id": "moderacion_contenido", "nombre": "Moderación de contenido automatizada", "notas": "Caso de uso de negocio: publicaciones tipo marketplace / centros de acopio" }
+      ]
+    },
+    {
+      "id": "modelo_base",
+      "nombre": "Arquitectura y modelo base",
+      "hijos": [
+        { "id": "transformers_arq", "nombre": "Arquitectura Transformer" },
+        { "id": "beto", "nombre": "BETO", "notas": "BERT preentrenado en español" },
+        {
+          "id": "modelo_hate_speech",
+          "nombre": "piuba-bigdata/beto-contextualized-hate-speech",
+          "notas": "Modelo ya adaptado a discurso de odio en español, usado como punto de partida ('Ruta A') por tener noción previa de toxicidad"
+        },
+        { "id": "tokenizacion", "nombre": "Tokenización subword", "notas": "AutoTokenizer, truncation=True, padding='max_length', max_length=128" }
+      ]
+    },
+    {
+      "id": "ecosistema_hf",
+      "nombre": "Ecosistema Hugging Face",
+      "hijos": [
+        { "id": "hf_hub", "nombre": "huggingface_hub", "notas": "Autenticación con login() y token HF_TOKEN cargado desde variables de entorno (.env vía python-dotenv, no Colab secrets)" },
+        {
+          "id": "datasets_lib",
+          "nombre": "datasets",
+          "notas": "load_dataset (Hub y CSV local), .map(), .remove_columns(), .set_format('torch')"
+        },
+        {
+          "id": "transformers_lib",
+          "nombre": "transformers",
+          "hijos": [
+            { "id": "autotokenizer", "nombre": "AutoTokenizer" },
+            {
+              "id": "automodel",
+              "nombre": "AutoModelForSequenceClassification",
+              "notas": "problem_type='multi_label_classification', ignore_mismatched_sizes=True para reiniciar la cabeza de clasificación"
+            },
+            { "id": "trainingargs", "nombre": "TrainingArguments" },
+            { "id": "trainer", "nombre": "Trainer", "notas": "Subclaseado para personalizar la función de pérdida" }
+          ]
+        },
+        {
+          "id": "entorno_local",
+          "nombre": "Entorno local del proyecto",
+          "notas": "Reemplaza a Google Colab: entorno virtual (.venv) definido por requirements.txt en la raíz del repo, y archivo .env (basado en .env.example) para HF_TOKEN. Ya no se usa drive.mount; la persistencia usa las carpetas del repo (training/data/, model_artifacts/)"
+        }
+      ]
+    },
+    {
+      "id": "ingenieria_datos",
+      "nombre": "Ingeniería y curación del dataset",
+      "hijos": [
+        {
+          "id": "estructura_directorios",
+          "nombre": "Estructura de directorios de datos del proyecto",
+          "notas": "training/data/raw = entrada (descargas del Hub, CSVs de dominio propio, archivos priorizados para revisión manual); training/data/processed = salida (dataset combinado y splits train/validation/test), reemplazando la carpeta 'dataset_moderacion' del notebook original en Colab"
+        },
+        {
+          "id": "fuentes_datos",
+          "nombre": "Fuentes de datos",
+          "hijos": [
+            { "id": "offendes", "nombre": "OffendES (fmplaza/offendes)", "notas": "Mapeo de etiquetas NO/NOE/OFP/OFG a categorías propias" },
+            {
+              "id": "superset",
+              "nombre": "Spanish Hate Speech Superset (manueltonneau/spanish-hate-speech-superset)",
+              "notas": "Agrega chileno, homomex, hateval, haternet, hascosva, misocorpus"
+            },
+            { "id": "datos_dominio", "nombre": "Datasets de dominio propio", "notas": "Centros de acopio, ejemplos generados por otro LLM, ejemplos manuales, pares contrastivos de tono" }
+          ]
+        },
+        {
+          "id": "preprocesamiento",
+          "nombre": "Preprocesamiento y normalización",
+          "hijos": [
+            { "id": "normalizacion_texto", "nombre": "Normalización: minúsculas + eliminación de acentos (unidecode)" },
+            { "id": "estandarizacion_columnas", "nombre": "Renombrado y estandarización de columnas (texto)" }
+          ]
+        },
+        {
+          "id": "priorizacion_heuristica",
+          "nombre": "Búsqueda heurística / priorización",
+          "hijos": [
+            { "id": "filtro_palabras_clave", "nombre": "Filtrado por palabras clave de violencia (raíces léxicas)" },
+            { "id": "justificacion_tasa_base", "nombre": "Justificación por tasa base observada", "notas": "~0 amenazas en 70 filas al azar; se prioriza en vez de muestrear aleatoriamente" }
+          ]
+        },
+        {
+          "id": "etiquetado",
+          "nombre": "Etiquetado",
+          "hijos": [
+            { "id": "revision_manual", "nombre": "Revisión manual (human-in-the-loop)", "notas": "Columnas es_grosero, es_amenaza, es_inapropiado completadas a mano" },
+            { "id": "reglas_decision", "nombre": "Reglas de decisión documentadas", "notas": "Ej. 'cuídate mucho' no es amenaza; NOE reclasificado a grosero=1 bajo 'Postura A' de tolerancia cero" }
+          ]
+        },
+        {
+          "id": "combinacion_fuentes",
+          "nombre": "Combinación de fuentes",
+          "hijos": [
+            { "id": "muestreo_controlado", "nombre": "Muestreo controlado por fuente (topes N_* para no ahogar ejemplos curados)" },
+            { "id": "limpieza", "nombre": "Eliminación de duplicados y filas vacías/ruido" },
+            { "id": "mezcla_aleatoria", "nombre": "Mezcla aleatoria (sample(frac=1)) para evitar sesgo por orden/fuente" },
+            { "id": "trazabilidad", "nombre": "Trazabilidad mediante columna 'fuente'" }
+          ]
+        },
+        {
+          "id": "split_dataset",
+          "nombre": "División del dataset (split)",
+          "hijos": [
+            { "id": "split_estratificado", "nombre": "Split estratificado multilabel vía columna auxiliar 'estrato'", "notas": "Prioriza la etiqueta más rara: inapropiado > amenaza > grosero > negativo" },
+            { "id": "particion_train_val_test", "nombre": "Partición train/validation/test (70/15/15) con train_test_split en dos pasos" },
+            { "id": "verificacion_minoritarias", "nombre": "Verificación de representación mínima de clases minoritarias en cada split" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "representacion_multilabel",
+      "nombre": "Representación del problema multilabel",
+      "hijos": [
+        { "id": "vector_labels", "nombre": "Vector de etiquetas labels=[grosero, amenaza, inapropiado] (multi-hot)" },
+        { "id": "codificacion_float", "nombre": "Codificación como floats para compatibilidad con la función de pérdida" }
+      ]
+    },
+    {
+      "id": "desbalance_clases",
+      "nombre": "Manejo del desbalance de clases",
+      "hijos": [
+        { "id": "pos_weight_crudo", "nombre": "Cálculo de pos_weight crudo", "notas": "(n_total - n_positivos) / n_positivos" },
+        { "id": "topes_por_categoria", "nombre": "Topes manuales por categoría (TOPES_POR_CATEGORIA)", "notas": "grosero=3.0, amenaza=8.0, inapropiado=3.5" },
+        { "id": "bce_loss", "nombre": "BCEWithLogitsLoss(pos_weight=...)", "notas": "Pérdida binaria por etiqueta, ponderada" },
+        { "id": "trainer_personalizado", "nombre": "TrainerConPesos", "notas": "Sobreescribe compute_loss para inyectar la pérdida ponderada" }
+      ]
+    },
+    {
+      "id": "entrenamiento",
+      "nombre": "Entrenamiento",
+      "hijos": [
+        { "id": "hiperparametros", "nombre": "TrainingArguments", "notas": "learning_rate, batch_size, epochs, weight_decay, eval/save strategy por época, metric_for_best_model='f1_inapropiado'" },
+        { "id": "reproducibilidad", "nombre": "Reproducibilidad: set_seed(42)" },
+        { "id": "checkpoints", "nombre": "Checkpoints persistidos localmente", "notas": "Guardados en /model_artifacts/checkpoints (antes en Google Drive)" }
+      ]
+    },
+    {
+      "id": "evaluacion",
+      "nombre": "Evaluación del modelo",
+      "hijos": [
+        { "id": "sigmoid_umbral", "nombre": "Sigmoid + umbral 0.5 para convertir logits en predicciones binarias por etiqueta" },
+        { "id": "metricas_clase", "nombre": "Métricas por clase: F1 (macro/micro), precision, recall" },
+        { "id": "matriz_confusion", "nombre": "Matriz de confusión multilabel (multilabel_confusion_matrix)" }
+      ]
+    },
+    {
+      "id": "guardado_despliegue",
+      "nombre": "Guardado y despliegue",
+      "hijos": [
+        { "id": "save_model", "nombre": "trainer.save_model() / tokenizer.save_pretrained()", "notas": "Modelo final guardado en /model_artifacts/modelo_moderacion_final (antes en Google Drive)" },
+        { "id": "recarga_inferencia", "nombre": "Recarga del modelo para inferencia (from_pretrained), envío a device (CPU/GPU)" }
+      ]
+    },
+    {
+      "id": "inferencia_negocio",
+      "nombre": "Inferencia y lógica de negocio",
+      "hijos": [
+        { "id": "umbrales_ajustables", "nombre": "Umbrales de decisión ajustables por categoría (UMBRALES_POR_CATEGORIA)", "notas": "inapropiado=0.30 (umbral bajo, prioriza recall bajo política de tolerancia cero)" },
+        { "id": "funcion_moderar", "nombre": "moderar_texto()", "notas": "Pipeline: tokenizar -> inferir -> aplicar umbral -> decidir bloquear/permitir" },
+        { "id": "casos_prueba", "nombre": "Casos de prueba", "notas": "Groserías, amenazas veladas, y texto ofuscado (leetspeak, ej. 'Pvt0s')" }
+      ]
+    }
+  ],
+  "flujo_end_to_end": [
+    "entorno_local",
+    "fuentes_datos",
+    "preprocesamiento",
+    "priorizacion_heuristica",
+    "etiquetado",
+    "combinacion_fuentes",
+    "split_dataset",
+    "tokenizacion",
+    "modelo_hate_speech",
+    "desbalance_clases",
+    "entrenamiento",
+    "evaluacion",
+    "guardado_despliegue",
+    "inferencia_negocio"
+  ],
+  "temas_para_profundizar": [
+    "Métricas para clasificación multilabel desbalanceada y por qué macro-F1 puede ser engañoso con clases muy escasas",
+    "Estrategias de weak supervision / etiquetado semi-automático (filtro por palabras clave)",
+    "Robustez frente a ofuscación de texto (leetspeak, sustituciones de caracteres)",
+    "Trade-off precision/recall vía umbral y su relación con políticas de moderación"
+  ]
+}
