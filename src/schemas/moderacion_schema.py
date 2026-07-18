@@ -31,6 +31,12 @@ class ModerarTextoRequest(BaseModel):
 class ResultadoCategoria(BaseModel):
     probabilidad: float
     activado: bool
+    detectado_via_normalizacion: bool = Field(
+        default=False,
+        description="True si la probabilidad ganadora (el maximo entre texto "
+        "original y normalizado) vino de la version normalizada -- util para "
+        "ver cuando la normalizacion anti-ofuscacion realmente aporto algo.",
+    )
 
 
 class DetalleVerificacionQwen(BaseModel):

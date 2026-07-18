@@ -14,6 +14,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.core.config import LABEL_COLUMNS, RUTA_MODELO_BETO, UMBRALES_POR_CATEGORIA
+from src.utils.normalizacion import normalizar_texto
 
 logger = logging.getLogger("moderacion.beto")
 
@@ -22,6 +23,7 @@ logger = logging.getLogger("moderacion.beto")
 class ResultadoBeto:
     probabilidades: dict
     activaciones: dict
+    detectado_via_normalizacion: dict
     tiempo_inferencia_ms: float
 
 
@@ -45,9 +47,10 @@ class ClasificadorBeto:
 
         logger.info("Modelo BETO cargado desde %s (device=%s)", ruta_modelo, self.device)
 
-    def predict(self, texto: str) -> ResultadoBeto:
-        inicio = time.perf_counter()
-
+    def _inferir_probabilidades(self, texto: str) -> dict:
+        """Corre el modelo sobre `texto` tal cual (sin normalizar) y
+        devuelve {categoria: probabilidad}. Reutilizado tanto para el
+        texto original como para la version normalizada en predict()."""
         inputs = self.tokenizer(
             texto, return_tensors="pt", truncation=True, padding="max_length", max_length=128
         )
@@ -57,11 +60,42 @@ class ClasificadorBeto:
             outputs = self.model(**inputs)
             probs = torch.sigmoid(outputs.logits)[0].cpu().numpy()
 
+        return {nombre: float(probs[i]) for i, nombre in enumerate(LABEL_COLUMNS)}
+
+    def predict(self, texto: str) -> ResultadoBeto:
+        """Infiere sobre el texto original Y sobre su version normalizada
+        (ver utils.normalizacion.normalizar_texto), para ser robustos a
+        ofuscacion (leetspeak, espaciado, separadores intercalados). El
+        resultado final por categoria es el MAXIMO de ambas probabilidades,
+        nunca un promedio -- si cualquiera de las dos versiones detecta
+        algo sospechoso, eso se refleja en el resultado."""
+        inicio = time.perf_counter()
+
+        probabilidades_original = self._inferir_probabilidades(texto)
+
+        texto_normalizado = normalizar_texto(texto)
+        if texto_normalizado != texto:
+            probabilidades_normalizado = self._inferir_probabilidades(texto_normalizado)
+        else:
+            # La normalizacion no cambio nada -- evitamos una segunda
+            # pasada por el modelo con el mismo texto.
+            probabilidades_normalizado = probabilidades_original
+
         probabilidades = {}
         activaciones = {}
-        for i, nombre in enumerate(LABEL_COLUMNS):
-            probabilidades[nombre] = round(float(probs[i]), 4)
-            activaciones[nombre] = bool(probs[i] > UMBRALES_POR_CATEGORIA[nombre])
+        detectado_via_normalizacion = {}
+        for nombre in LABEL_COLUMNS:
+            prob_original = probabilidades_original[nombre]
+            prob_normalizado = probabilidades_normalizado[nombre]
+
+            gano_normalizado = prob_normalizado > prob_original
+            probabilidad_final = prob_normalizado if gano_normalizado else prob_original
+
+            probabilidades[nombre] = round(probabilidad_final, 4)
+            activaciones[nombre] = bool(probabilidad_final > UMBRALES_POR_CATEGORIA[nombre])
+            detectado_via_normalizacion[nombre] = gano_normalizado
 
         tiempo_inferencia_ms = (time.perf_counter() - inicio) * 1000
-        return ResultadoBeto(probabilidades, activaciones, tiempo_inferencia_ms)
+        return ResultadoBeto(
+            probabilidades, activaciones, detectado_via_normalizacion, tiempo_inferencia_ms
+        )

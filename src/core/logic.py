@@ -26,6 +26,7 @@ def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
         nombre: {
             "probabilidad": resultado_beto.probabilidades[nombre],
             "activado": resultado_beto.activaciones[nombre],
+            "detectado_via_normalizacion": resultado_beto.detectado_via_normalizacion[nombre],
         }
         for nombre in LABEL_COLUMNS
     }

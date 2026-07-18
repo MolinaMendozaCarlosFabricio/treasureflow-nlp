@@ -65,3 +65,48 @@ def test_texto_muy_largo_da_422(client):
     respuesta = client.post("/moderar", json={"texto": "a" * 1001})
 
     assert respuesta.status_code == 422
+
+
+# --- Robustez frente a ofuscacion (normalizar_texto + maximo entre texto
+# original y normalizado, ver src/models/beto_classifier.py) --------------
+# Antes de la normalizacion, el espaciado entre letras rompia el token que
+# el tokenizer necesitaba para reconocer la palabra -- estos casos antes
+# probablemente no se detectaban bien.
+
+
+def test_texto_con_grosero_espaciado_letra_por_letra_bloquea(client):
+    respuesta = client.post(
+        "/moderar",
+        json={"texto": "Eres un p u t o de mierda"},
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["bloqueado"] is True
+    assert cuerpo["categorias"]["grosero"]["activado"] is True
+    # Prueba que la version normalizada fue la que realmente aporto la
+    # señal ganadora, no una casualidad del texto original sin ofuscar.
+    assert cuerpo["categorias"]["grosero"]["detectado_via_normalizacion"] is True
+
+
+def test_texto_con_grosero_espaciado_en_resena_bloquea(client):
+    respuesta = client.post(
+        "/moderar",
+        json={"texto": "Que p u t o servicio, nunca vuelvo", "campo": "resena"},
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["bloqueado"] is True
+    assert cuerpo["categorias"]["grosero"]["activado"] is True
+    assert cuerpo["categorias"]["grosero"]["detectado_via_normalizacion"] is True
+
+
+def test_texto_con_grosero_separado_por_puntos_bloquea(client):
+    respuesta = client.post("/moderar", json={"texto": "p.u.t.o"})
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["bloqueado"] is True
+    assert cuerpo["categorias"]["grosero"]["activado"] is True
+    assert cuerpo["categorias"]["grosero"]["detectado_via_normalizacion"] is True
