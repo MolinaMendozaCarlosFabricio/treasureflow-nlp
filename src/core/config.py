@@ -18,6 +18,11 @@ load_dotenv(PROJECT_ROOT / ".env")
 MODEL_ARTIFACTS_DIR = PROJECT_ROOT / "model_artifacts"
 RUTA_MODELO_BETO = MODEL_ARTIFACTS_DIR / "modelo_moderacion_final"
 
+# Registro persistente (JSONL) de posibles inconsistencias
+# razonamiento/veredicto detectadas en la verificacion con Qwen -- ver
+# src/models/qwen_verifier.py y training/scripts/analizar_auditoria_qwen.py.
+QWEN_AUDITORIA_PATH = PROJECT_ROOT / "training" / "notebooks" / "artifacts" / "qwen_auditoria.jsonl"
+
 # Mismo orden usado durante el entrenamiento (ver notebook): el indice de
 # cada logit del modelo corresponde a esta posicion.
 LABEL_COLUMNS = ["grosero", "amenaza", "inapropiado"]

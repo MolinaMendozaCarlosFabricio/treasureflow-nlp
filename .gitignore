@@ -232,3 +232,4 @@ training/data/raw/
 
 # Artifacts
 model_artifacts/*/model.safetensors
+training/notebooks/artifacts/
