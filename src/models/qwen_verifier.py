@@ -1,14 +1,16 @@
-"""Capa opcional de verificacion con un LLM generativo (Qwen/Qwen3-0.6B).
+"""Capa opcional de verificacion con un LLM generativo (Qwen3-32B via Groq).
 
 Se activa solo para categorias cuya probabilidad de BETO cae en zona dudosa
 cerca de su umbral (ver core.logic / MARGENES_POR_CATEGORIA). Todo el modulo
-esta disenado para que un fallo aqui (sin conexion, modelo no disponible,
-respuesta no parseable, etc.) nunca tumbe la API -- si algo falla, se
-loggea y se retorna una senal de "sin verdicto" para que el llamador se
-quede con la decision original de BETO.
+esta disenado para que un fallo aqui (sin conexion, API no disponible,
+timeout, rate limit, key invalida, respuesta no parseable, etc.) nunca
+tumbe la API -- si algo falla, se loggea y se retorna una senal de "sin
+verdicto" para que el llamador se quede con la decision original de BETO.
 
-Carga perezosa: si HABILITAR_QWEN=false, este modulo no descarga ni carga
-nada en memoria.
+Ya no carga ningun modelo local: usa la API de Groq (gratuita, expone un
+endpoint compatible con el SDK de OpenAI) para correr Qwen3-32B de forma
+remota. Si HABILITAR_QWEN=false o no hay GROQ_API_KEY configurada, este
+modulo no hace ninguna llamada de red.
 """
 
 import json
@@ -16,9 +18,9 @@ import logging
 import re
 from datetime import datetime
 
-import torch
+from openai import AsyncOpenAI
 
-from src.core.config import HABILITAR_QWEN, HF_TOKEN, QWEN_AUDITORIA_PATH, QWEN_MODEL_NAME
+from src.core.config import GROQ_API_KEY, HABILITAR_QWEN, QWEN_AUDITORIA_PATH, QWEN_MODEL_NAME
 
 logger = logging.getLogger("moderacion.qwen")
 
@@ -108,70 +110,25 @@ _CONFIRMA_BLOQUE = re.compile(r'"confirma"\s*:\s*(true|false)', re.IGNORECASE)
 _RAZON_PLAN_B = "Razón no disponible (formato de respuesta inválido)"
 _RAZON_SIN_JSON = "no se pudo interpretar la respuesta"
 
-# Estado del modulo: se cargan una sola vez por proceso (lazy singleton).
-_model = None
-_tokenizer = None
-_carga_intentada = False
-_carga_exitosa = False
+# Cliente hacia la API de Groq (compatible con el SDK de OpenAI), creado de
+# forma perezosa -- recien la primera vez que hace falta, y solo despues de
+# que esta_disponible() ya confirmo que hay GROQ_API_KEY configurada (el
+# cliente de OpenAI lanza un error al construirse si el api_key es None).
+_cliente = None
 
 
-def cargar_modelo_qwen() -> None:
-    """Intenta cargar el modelo/tokenizer de Qwen una sola vez por proceso.
-
-    Es un no-op si HABILITAR_QWEN=false o si ya se intento cargar antes
-    (exitosa o fallidamente -- no se reintenta en cada llamada). Pensada
-    para invocarse explicitamente en el lifespan de la API al arrancar,
-    pero tambien se auto-invoca de forma perezosa si nadie la llamo antes
-    (ver esta_disponible()).
-    """
-    global _model, _tokenizer, _carga_intentada, _carga_exitosa
-
-    if _carga_intentada:
-        return
-    _carga_intentada = True
-
-    if not HABILITAR_QWEN:
-        logger.info("Verificacion con Qwen deshabilitada (HABILITAR_QWEN=false); no se carga nada.")
-        return
-
-    try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-
-        _tokenizer = AutoTokenizer.from_pretrained(QWEN_MODEL_NAME, token=HF_TOKEN)
-        _model = AutoModelForCausalLM.from_pretrained(
-            QWEN_MODEL_NAME,
-            token=HF_TOKEN,
-            torch_dtype=torch.float16,
-            device_map="auto",
-        )
-        _model.eval()
-        _carga_exitosa = True
-
-        logger.info("Modelo Qwen (%s) cargado correctamente.", QWEN_MODEL_NAME)
-
-    except Exception as exc:  # noqa: BLE001 - un fallo de carga nunca debe tumbar la API
-        logger.error(
-            "No se pudo cargar el modelo Qwen (%s): %s. La API seguira funcionando solo con BETO.",
-            QWEN_MODEL_NAME,
-            exc,
-        )
-        _model = None
-        _tokenizer = None
-        _carga_exitosa = False
+def _obtener_cliente() -> AsyncOpenAI:
+    global _cliente
+    if _cliente is None:
+        _cliente = AsyncOpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+    return _cliente
 
 
 def esta_disponible() -> bool:
-    """True si Qwen esta habilitado por config Y el modelo se pudo cargar.
-
-    Dispara la carga perezosa si todavia no se habia intentado (red de
-    seguridad para cuando nadie llamo a cargar_modelo_qwen() al arrancar,
-    por ejemplo en tests que invocan la logica directamente).
-    """
-    if not HABILITAR_QWEN:
-        return False
-    if not _carga_intentada:
-        cargar_modelo_qwen()
-    return _carga_exitosa
+    """True si Qwen esta habilitado por config Y hay una GROQ_API_KEY
+    configurada. Ya no depende de cargar ningun modelo local -- la
+    verificacion ahora es una llamada a la API externa de Groq."""
+    return HABILITAR_QWEN and bool(GROQ_API_KEY)
 
 
 def _parsear_respuesta(texto_generado: str) -> tuple:
@@ -298,8 +255,9 @@ def _construir_prompt(texto: str, categoria: str) -> str:
     )
 
 
-def verificar_con_qwen(texto: str, categoria: str, probabilidad: float) -> tuple:
-    """Le pregunta a Qwen si `texto` realmente corresponde a `categoria`.
+async def verificar_con_qwen(texto: str, categoria: str, probabilidad: float) -> tuple:
+    """Le pregunta a Qwen (via la API de Groq) si `texto` realmente
+    corresponde a `categoria`.
 
     Devuelve (confirma, razon):
       - confirma: True/False si Qwen dio un veredicto valido, None si no
@@ -313,34 +271,29 @@ def verificar_con_qwen(texto: str, categoria: str, probabilidad: float) -> tuple
     try:
         prompt = _construir_prompt(texto, categoria)
 
-        # DIAGNÓSTICO TEMPORAL -- deja ver exactamente qué generó el modelo
+        # DIAGNÓSTICO TEMPORAL -- deja ver exactamente qué se le mando a Qwen
         print("=" * 60)
         print("ENTRADA DE QWEN:")
         print(prompt)
         print("=" * 60)
 
-        mensajes = [{"role": "user", "content": prompt}]
-        entrada = _tokenizer.apply_chat_template(
-            mensajes,
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=True,
-        )
-        inputs = _tokenizer(entrada, return_tensors="pt").to(_model.device)
-
-        with torch.no_grad():
-            salida = _model.generate(
-                **inputs,
-                max_new_tokens=500,
-                do_sample=False,
-                temperature=0.1,
-            )
-
-        texto_generado = _tokenizer.decode(
-            salida[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True
+        cliente = _obtener_cliente()
+        respuesta = await cliente.chat.completions.create(
+            model=QWEN_MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=500,
+            # reasoning_effort="none": Qwen en Groq es un modelo "thinking"
+            # por defecto y devuelve un bloque <think>...</think> larguisimo
+            # antes de la respuesta -- sin esto, max_tokens=500 se agota en
+            # plena reflexion y nunca llega al JSON final (confirmado en
+            # pruebas reales contra la API).
+            reasoning_effort="none",
         )
 
-        # DIAGNÓSTICO TEMPORAL -- deja ver exactamente qué generó el modelo
+        texto_generado = respuesta.choices[0].message.content
+
+        # DIAGNÓSTICO TEMPORAL -- deja ver exactamente qué genero Qwen
         print("=" * 60)
         print("SALIDA CRUDA DE QWEN:")
         print(texto_generado)
@@ -361,6 +314,6 @@ def verificar_con_qwen(texto: str, categoria: str, probabilidad: float) -> tuple
 
         return confirma, razon
 
-    except Exception as exc:  # noqa: BLE001 - un fallo de Qwen nunca debe tumbar la API
-        logger.warning("Verificacion con Qwen fallo para categoria=%s: %s", categoria, exc)
+    except Exception as exc:  # noqa: BLE001 - un fallo de Qwen/Groq nunca debe tumbar la API
+        logger.warning("Verificacion con Qwen (Groq) fallo para categoria=%s: %s", categoria, exc)
         return None, f"Verificacion con Qwen fallo: {exc}"

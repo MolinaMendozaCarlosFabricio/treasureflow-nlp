@@ -20,11 +20,11 @@ router = APIRouter()
 
 
 @router.post("/moderar", response_model=ModerarTextoResponse)
-def moderar(request: Request, payload: ModerarTextoRequest) -> ModerarTextoResponse:
+async def moderar(request: Request, payload: ModerarTextoRequest) -> ModerarTextoResponse:
     texto_limpio = limpiar_espacios(payload.texto)
 
     inicio = time.perf_counter()
-    resultado = moderar_texto(texto_limpio, request.app.state.beto)
+    resultado = await moderar_texto(texto_limpio, request.app.state.beto)
     tiempo_total_ms = (time.perf_counter() - inicio) * 1000
 
     logger.info(

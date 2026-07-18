@@ -48,6 +48,9 @@ MARGENES_POR_CATEGORIA = {
 MAX_LONGITUD_TEXTO = 1000
 
 HABILITAR_QWEN = os.environ.get("HABILITAR_QWEN", "false").strip().lower() == "true"
-QWEN_MODEL_NAME = os.environ.get("QWEN_MODEL_NAME", "Qwen/Qwen3-0.6B")
+# Id del modelo tal como lo espera la API de Groq (compatible con el SDK
+# de OpenAI) -- ya no es un repo de Hugging Face, ver src/models/qwen_verifier.py.
+QWEN_MODEL_NAME = os.environ.get("QWEN_MODEL_NAME", "qwen/qwen3.6-27b")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY") or None
 
 HF_TOKEN = os.environ.get("HF_TOKEN") or None

@@ -10,7 +10,6 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from src.core.config import HABILITAR_QWEN
 from src.models import qwen_verifier
 from src.models.beto_classifier import ClasificadorBeto
 from src.routes.moderacion import router as moderacion_router
@@ -27,11 +26,12 @@ async def lifespan(app: FastAPI):
     logger.info("Cargando modelo BETO...")
     app.state.beto = ClasificadorBeto()
 
-    if HABILITAR_QWEN:
-        logger.info("HABILITAR_QWEN=true, cargando modelo Qwen...")
-        qwen_verifier.cargar_modelo_qwen()
+    if qwen_verifier.esta_disponible():
+        logger.info("Verificacion con Qwen habilitada, via API externa (Groq).")
     else:
-        logger.info("Verificacion con Qwen deshabilitada (HABILITAR_QWEN=false).")
+        logger.info(
+            "Verificacion con Qwen deshabilitada (HABILITAR_QWEN=false o falta GROQ_API_KEY)."
+        )
 
     yield
 

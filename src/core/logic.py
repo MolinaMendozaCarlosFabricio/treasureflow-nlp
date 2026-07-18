@@ -19,7 +19,7 @@ def en_zona_dudosa(probabilidad: float, umbral: float, margen: float) -> bool:
     return abs(probabilidad - umbral) <= margen
 
 
-def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
+async def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
     resultado_beto = beto.predict(texto)
 
     categorias = {
@@ -43,7 +43,7 @@ def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
             if not en_zona_dudosa(probabilidad, umbral, margen):
                 continue
 
-            confirma, razon = verificar_con_qwen(texto, nombre, probabilidad)
+            confirma, razon = await verificar_con_qwen(texto, nombre, probabilidad)
 
             # Solo sobreescribimos la decision de BETO si Qwen dio un
             # veredicto valido -- si confirma es None (no disponible o

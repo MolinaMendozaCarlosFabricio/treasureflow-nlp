@@ -165,11 +165,21 @@ necesidad de volver a entrenar nada.
      Un texto vacío o de más de 1000 caracteres devuelve `422` con un
      mensaje claro en vez de procesarse.
 
-4. **Verificación opcional con Qwen**: por defecto está desactivada. Para
-   habilitarla, en tu `.env` pon `HABILITAR_QWEN=true` (ver
-   `.env.example`). Solo se activa para categorías cuya probabilidad cae
-   en zona dudosa cerca de su umbral; si Qwen falla o no está disponible,
-   la API sigue respondiendo únicamente con la decisión de BETO.
+4. **Verificación opcional con Qwen (vía Groq)**: por defecto está
+   desactivada. Ya no corre un modelo local — usa la API gratuita de
+   [Groq](https://console.groq.com/) (compatible con el SDK de OpenAI)
+   para llamar a Qwen3-32B de forma remota. Para habilitarla:
+
+   1. Crea una cuenta en [console.groq.com](https://console.groq.com/) y
+      genera una API key (sección "API Keys").
+   2. En tu `.env`, pon `HABILITAR_QWEN=true` y `GROQ_API_KEY=` con la key
+      que generaste (ver `.env.example`). Si falta la key, la verificación
+      se considera no disponible aunque `HABILITAR_QWEN=true`.
+
+   Solo se activa para categorías cuya probabilidad cae en zona dudosa
+   cerca de su umbral; si la llamada a Groq falla (sin conexión, timeout,
+   rate limit, key inválida), la API sigue respondiendo únicamente con la
+   decisión de BETO.
 
 5. **Tests**: desde la raíz del repo, con el entorno virtual activado:
 

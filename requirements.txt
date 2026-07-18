@@ -38,6 +38,10 @@ optuna>=3.6
 fastapi>=0.110
 uvicorn[standard]>=0.29
 
+# Verificacion con Qwen via Groq (API externa gratuita, expone un endpoint
+# compatible con el SDK de OpenAI) -- ver src/models/qwen_verifier.py
+openai>=1.30
+
 # Testing
 pytest>=8.0
 httpx>=0.27

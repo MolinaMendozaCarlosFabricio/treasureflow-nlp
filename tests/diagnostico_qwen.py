@@ -13,8 +13,17 @@ lo importaría y ejecutaría por completo (10 llamadas reales a Qwen) cada
 vez que corras la suite normal.
 """
 
+import asyncio
 import re
+import sys
+
 from src.models.qwen_verifier import verificar_con_qwen
+
+# La consola de Windows suele usar cp1252 por defecto, que no puede
+# imprimir los emojis de las marcas de resultado (✅ ❌ ⚠️) -- forzamos
+# UTF-8 en stdout para que corra igual sin importar la codepage activa.
+if sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
 
 # IMPORTANTE: ninguno de estos textos debe ser igual ni casi idéntico a
 # los ejemplos few-shot definidos en EJEMPLOS_POR_CATEGORIA, para que la
@@ -46,30 +55,35 @@ def detectar_contradiccion(confirma, razon):
     return False
 
 
-resultados = []
-for texto, categoria, probabilidad in CASOS_PRUEBA:
-    confirma, razon = verificar_con_qwen(texto, categoria, probabilidad)
-    contradice = detectar_contradiccion(confirma, razon) if confirma is not None else False
-    resultados.append({
-        "texto": texto,
-        "categoria": categoria,
-        "confirma": confirma,
-        "razon": razon,
-        "contradice": contradice,
-    })
-    marca = "⚠️ CONTRADICCIÓN" if contradice else ("❌ NO PARSEÓ" if confirma is None else "✅")
-    print(f"\n{marca}")
-    print(f"Texto: {texto}")
-    print(f"Categoría: {categoria} | Confirma: {confirma}")
-    print(f"Razón: {razon}")
+async def main():
+    resultados = []
+    for texto, categoria, probabilidad in CASOS_PRUEBA:
+        confirma, razon = await verificar_con_qwen(texto, categoria, probabilidad)
+        contradice = detectar_contradiccion(confirma, razon) if confirma is not None else False
+        resultados.append({
+            "texto": texto,
+            "categoria": categoria,
+            "confirma": confirma,
+            "razon": razon,
+            "contradice": contradice,
+        })
+        marca = "⚠️ CONTRADICCIÓN" if contradice else ("❌ NO PARSEÓ" if confirma is None else "✅")
+        print(f"\n{marca}")
+        print(f"Texto: {texto}")
+        print(f"Categoría: {categoria} | Confirma: {confirma}")
+        print(f"Razón: {razon}")
 
-# Resumen final
-total = len(resultados)
-n_contradicciones = sum(1 for r in resultados if r["contradice"])
-n_no_parseo = sum(1 for r in resultados if r["confirma"] is None)
+    # Resumen final
+    total = len(resultados)
+    n_contradicciones = sum(1 for r in resultados if r["contradice"])
+    n_no_parseo = sum(1 for r in resultados if r["confirma"] is None)
 
-print("\n" + "=" * 60)
-print(f"RESUMEN: {total} casos probados")
-print(f"  Contradicciones detectadas: {n_contradicciones} ({n_contradicciones/total*100:.1f}%)")
-print(f"  Fallos de parseo: {n_no_parseo} ({n_no_parseo/total*100:.1f}%)")
-print(f"  Respuestas aparentemente consistentes: {total - n_contradicciones - n_no_parseo}")
+    print("\n" + "=" * 60)
+    print(f"RESUMEN: {total} casos probados")
+    print(f"  Contradicciones detectadas: {n_contradicciones} ({n_contradicciones/total*100:.1f}%)")
+    print(f"  Fallos de parseo: {n_no_parseo} ({n_no_parseo/total*100:.1f}%)")
+    print(f"  Respuestas aparentemente consistentes: {total - n_contradicciones - n_no_parseo}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

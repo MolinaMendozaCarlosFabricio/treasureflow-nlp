@@ -1,46 +1,114 @@
-"""Tests unitarios de la capa de verificacion con Qwen.
+"""Tests unitarios de la capa de verificacion con Qwen (via la API de Groq).
 
-Estos tests NO descargan ni cargan el modelo real: fuerzan
-HABILITAR_QWEN=False (independientemente de lo que tenga el .env local) y
-verifican que en ese caso el modulo es un no-op completo, ademas de
-probar el parseo tolerante de la respuesta de forma aislada.
+Estos tests NO hacen llamadas de red reales: mockean
+_obtener_cliente()/client.chat.completions.create con AsyncMock (la
+funcion es async), y fuerzan HABILITAR_QWEN/GROQ_API_KEY segun el caso
+(independientemente de lo que tenga el .env local). Tambien cubren, de
+forma aislada, el parseo tolerante de la respuesta, los ejemplos/
+instrucciones por categoria, y la salvaguarda de auditoria -- nada de eso
+cambio con este refactor, solo la fuente de la respuesta cruda.
 """
 
+import asyncio
 import json
 import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import src.models.qwen_verifier as qwen_verifier
 
 
-def _resetear_estado_modulo():
-    qwen_verifier._model = None
-    qwen_verifier._tokenizer = None
-    qwen_verifier._carga_intentada = False
-    qwen_verifier._carga_exitosa = False
+def _respuesta_groq(contenido: str):
+    """Arma un objeto que imita la forma de la respuesta real de
+    client.chat.completions.create() lo suficiente para que
+    respuesta.choices[0].message.content funcione."""
+    mensaje = MagicMock()
+    mensaje.content = contenido
+    choice = MagicMock()
+    choice.message = mensaje
+    respuesta = MagicMock()
+    respuesta.choices = [choice]
+    return respuesta
 
 
-def test_qwen_deshabilitado_no_intenta_cargar_el_modelo(monkeypatch):
+# --- esta_disponible(): ahora depende de HABILITAR_QWEN Y GROQ_API_KEY -----
+
+
+def test_esta_disponible_false_si_habilitar_qwen_es_false(monkeypatch):
     monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", False)
-    _resetear_estado_modulo()
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", "gsk_fake")
 
-    with patch("transformers.AutoModelForCausalLM.from_pretrained") as mock_causal_lm:
-        assert qwen_verifier.esta_disponible() is False
-        mock_causal_lm.assert_not_called()
+    assert qwen_verifier.esta_disponible() is False
 
-    _resetear_estado_modulo()
+
+def test_esta_disponible_false_si_falta_groq_api_key(monkeypatch):
+    monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", None)
+
+    assert qwen_verifier.esta_disponible() is False
+
+
+def test_esta_disponible_true_si_ambos_estan_configurados(monkeypatch):
+    monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", "gsk_fake")
+
+    assert qwen_verifier.esta_disponible() is True
 
 
 def test_verificar_con_qwen_deshabilitado_retorna_none_sin_lanzar(monkeypatch):
     monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", False)
-    _resetear_estado_modulo()
 
-    confirma, razon = qwen_verifier.verificar_con_qwen("cualquier texto", "grosero", 0.5)
+    confirma, razon = asyncio.run(
+        qwen_verifier.verificar_con_qwen("cualquier texto", "grosero", 0.5)
+    )
 
     assert confirma is None
     assert "no disponible" in razon.lower()
 
-    _resetear_estado_modulo()
+
+# --- verificar_con_qwen: llamada a Groq (mockeada) --------------------------
+
+
+def test_verificar_con_qwen_llama_a_groq_y_parsea_la_respuesta(monkeypatch):
+    monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", "gsk_fake")
+
+    cliente_mock = MagicMock()
+    cliente_mock.chat.completions.create = AsyncMock(
+        return_value=_respuesta_groq('{"confirma": true, "razon": "contiene groserias directas"}')
+    )
+    monkeypatch.setattr(qwen_verifier, "_obtener_cliente", lambda: cliente_mock)
+
+    confirma, razon = asyncio.run(
+        qwen_verifier.verificar_con_qwen("texto de prueba", "grosero", 0.5)
+    )
+
+    assert confirma is True
+    assert razon == "contiene groserias directas"
+
+    cliente_mock.chat.completions.create.assert_awaited_once()
+    _args, kwargs = cliente_mock.chat.completions.create.call_args
+    assert kwargs["model"] == qwen_verifier.QWEN_MODEL_NAME
+    assert kwargs["temperature"] == 0.1
+    assert kwargs["max_tokens"] == 500
+    assert len(kwargs["messages"]) == 1
+    assert kwargs["messages"][0]["role"] == "user"
+    assert "grosero" in kwargs["messages"][0]["content"].lower()
+
+
+def test_verificar_con_qwen_maneja_error_de_la_api_sin_lanzar(monkeypatch):
+    monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", "gsk_fake")
+
+    cliente_mock = MagicMock()
+    cliente_mock.chat.completions.create = AsyncMock(side_effect=RuntimeError("timeout simulado"))
+    monkeypatch.setattr(qwen_verifier, "_obtener_cliente", lambda: cliente_mock)
+
+    confirma, razon = asyncio.run(
+        qwen_verifier.verificar_con_qwen("texto de prueba", "amenaza", 0.5)
+    )
+
+    assert confirma is None
+    assert "timeout simulado" in razon
 
 
 def test_parsear_respuesta_tolerante_a_texto_extra_alrededor_del_json():
@@ -200,14 +268,14 @@ def test_verificar_con_qwen_no_altera_el_veredicto_pese_a_inconsistencia_detecta
     # descartar ni sobreescribir el veredicto de Qwen bajo ninguna
     # circunstancia.
     monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", "gsk_fake")
     # Esta llamada tambien dispara _registrar_auditoria (escribe a disco) --
     # redirigimos a un tmp_path para no contaminar el JSONL real del repo.
     monkeypatch.setattr(qwen_verifier, "QWEN_AUDITORIA_PATH", tmp_path / "qwen_auditoria.jsonl")
-    _resetear_estado_modulo()
-    qwen_verifier._carga_intentada = True
-    qwen_verifier._carga_exitosa = True
-    qwen_verifier._tokenizer = MagicMock()
-    qwen_verifier._model = MagicMock()
+
+    cliente_mock = MagicMock()
+    cliente_mock.chat.completions.create = AsyncMock(return_value=_respuesta_groq("cualquier cosa"))
+    monkeypatch.setattr(qwen_verifier, "_obtener_cliente", lambda: cliente_mock)
 
     resultado_inconsistente = (True, "esto no implica ninguna amenaza")
     monkeypatch.setattr(
@@ -215,12 +283,12 @@ def test_verificar_con_qwen_no_altera_el_veredicto_pese_a_inconsistencia_detecta
     )
 
     with caplog.at_level(logging.WARNING, logger="moderacion.qwen"):
-        resultado = qwen_verifier.verificar_con_qwen("texto de prueba", "amenaza", 0.5)
+        resultado = asyncio.run(
+            qwen_verifier.verificar_con_qwen("texto de prueba", "amenaza", 0.5)
+        )
 
     assert resultado == resultado_inconsistente
     assert any("inconsistencia" in registro.message.lower() for registro in caplog.records)
-
-    _resetear_estado_modulo()
 
 
 # --- Persistencia de la auditoria en JSONL (training/notebooks/artifacts/
@@ -282,25 +350,23 @@ def test_registrar_auditoria_no_lanza_si_falla_la_escritura(monkeypatch):
 def test_verificar_con_qwen_registra_auditoria_cuando_detecta_inconsistencia(
     tmp_path, monkeypatch
 ):
+    monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
+    monkeypatch.setattr(qwen_verifier, "GROQ_API_KEY", "gsk_fake")
     ruta_auditoria = tmp_path / "qwen_auditoria.jsonl"
     monkeypatch.setattr(qwen_verifier, "QWEN_AUDITORIA_PATH", ruta_auditoria)
-    monkeypatch.setattr(qwen_verifier, "HABILITAR_QWEN", True)
-    _resetear_estado_modulo()
-    qwen_verifier._carga_intentada = True
-    qwen_verifier._carga_exitosa = True
-    qwen_verifier._tokenizer = MagicMock()
-    qwen_verifier._model = MagicMock()
+
+    cliente_mock = MagicMock()
+    cliente_mock.chat.completions.create = AsyncMock(return_value=_respuesta_groq("cualquier cosa"))
+    monkeypatch.setattr(qwen_verifier, "_obtener_cliente", lambda: cliente_mock)
 
     resultado_inconsistente = (True, "esto no implica ninguna amenaza")
     monkeypatch.setattr(
         qwen_verifier, "_parsear_respuesta", lambda texto_generado: resultado_inconsistente
     )
 
-    qwen_verifier.verificar_con_qwen("texto de prueba", "amenaza", 0.5)
+    asyncio.run(qwen_verifier.verificar_con_qwen("texto de prueba", "amenaza", 0.5))
 
     assert ruta_auditoria.exists()
     evento = json.loads(ruta_auditoria.read_text(encoding="utf-8").strip())
     assert evento["categoria"] == "amenaza"
     assert evento["confirma"] is True
-
-    _resetear_estado_modulo()
