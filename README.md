@@ -90,11 +90,42 @@ treasureflow_nlp/
 Ninguna de estas carpetas de datos ni el modelo entrenado se versionan en
 git (ver `.gitignore`); solo se mantiene su estructura mediante `.gitkeep`.
 
+## Descargar el modelo ya entrenado (entorno nuevo)
+
+Si estás preparando un entorno nuevo (ej. un despliegue) y `model_artifacts/`
+está vacío porque no vas a correr el notebook de entrenamiento ahí, puedes
+bajar el modelo ya entrenado desde el repositorio privado de Hugging Face
+Hub donde se publica:
+
+```powershell
+python scripts/descargar_modelo.py
+```
+
+- Descarga el contenido a `model_artifacts/modelo_moderacion_final/` — la
+  misma ruta que usa `src/models/beto_classifier.py` para cargar el modelo,
+  así que no hace falta ningún otro cambio para que la API lo encuentre.
+- Si esa carpeta ya existe y tiene archivos, el script no vuelve a
+  descargar nada (evita descargas innecesarias).
+- Si la descarga falla (sin conexión, token inválido, repo no encontrado),
+  imprime un mensaje explicando la causa probable y termina con código de
+  error distinto de cero, para que un pipeline de despliegue detecte el
+  fallo en vez de seguir con un modelo faltante.
+- Variables de entorno (en tu `.env`, ver `.env.example`):
+  - `HF_TOKEN` — el repo es privado, necesita el mismo token que ya usas
+    para el resto del proyecto.
+  - `MODEL_REPO` — id del repositorio en el Hub (tiene un valor por
+    defecto razonable si no lo defines).
+  - `MODEL_REVISION` — revisión/tag a descargar (default: `main`).
+
+Este paso es previo al arranque de la API: córrelo antes de `uvicorn` la
+primera vez en un entorno donde el modelo todavía no esté presente.
+
 ## Levantar la API de moderación
 
 Una vez que existe `model_artifacts/modelo_moderacion_final/` (generado por
-el notebook de entrenamiento), se puede servir ese modelo con una API
-FastAPI sin necesidad de volver a entrenar nada.
+el notebook de entrenamiento, o descargado con `scripts/descargar_modelo.py`
+como se explica arriba), se puede servir ese modelo con una API FastAPI sin
+necesidad de volver a entrenar nada.
 
 1. Con el entorno virtual activado e instalado (pasos 1-3 de
    "Inicializar el proyecto"), levanta el servidor **desde la raíz del
