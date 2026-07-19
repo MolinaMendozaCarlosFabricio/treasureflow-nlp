@@ -26,9 +26,19 @@ treasureflow_nlp/
 │   ├── models/
 │   ├── schemas/
 │   ├── core/
-│   └── utils/
+│   ├── utils/
+│   └── worker/                                    # consumidor AMQP (procesamiento async de moderacion)
+│       ├── consumidor.py                          # punto de entrada + topologia RabbitMQ
+│       ├── procesador.py                          # clasifica un mensaje (reutiliza core/logic.py)
+│       └── esquemas_mensajes.py                   # Pydantic para los mensajes AMQP
+├── scripts/                                      # utilidades de despliegue (no son parte de la API)
+│   ├── descargar_modelo.py                        # baja el modelo entrenado desde HF Hub
+│   ├── exportar_modelo_onnx.py                    # experimento ONNX+INT8 (evaluado y descartado, ver README)
+│   ├── consumo_ram.py                             # compara RAM: original vs. ONNX INT8
+│   └── iniciar_worker.py                          # arranca el worker de moderacion (AMQP)
 ├── tests/
-│   └── test_moderacion.py
+│   ├── test_moderacion.py
+│   └── test_worker.py
 ├── requirements.txt
 └── .env.example
 ```
@@ -120,12 +130,63 @@ python scripts/descargar_modelo.py
 Este paso es previo al arranque de la API: córrelo antes de `uvicorn` la
 primera vez en un entorno donde el modelo todavía no esté presente.
 
+## Optimización ONNX + INT8: evaluada y descartada (decisión documentada)
+
+Se evaluó exportar el modelo BETO a formato ONNX y cuantizarlo
+dinámicamente a INT8 (`scripts/exportar_modelo_onnx.py`, sigue en el repo
+como referencia/experimento documentado), buscando reducir RAM y tiempo de
+inferencia en el despliegue de producción en CPU.
+
+**Resultados medidos** (con `AutoQuantizationConfig.avx2`):
+
+| Métrica | Original (PyTorch) | ONNX INT8 | Cambio |
+|---|---|---|---|
+| Tamaño en disco | 420.0 MB | 106.5 MB | **-74.7%** |
+| Tiempo de inferencia (CPU) | ~118 ms | ~85 ms | **-28%** |
+| RAM al cargar el modelo | ~703 MB | ~856 MB | **+22%** ⚠️ |
+
+**Decisión: NO se usa la versión ONNX en producción.** La API (`src/models/beto_classifier.py`)
+carga el modelo original en PyTorch desde
+`model_artifacts/modelo_moderacion_final/`, tal cual. Razón: el
+procesamiento de moderación corre de forma **asíncrona vía un worker
+consumidor de cola**, no en el camino crítico de una petición HTTP — así
+que la mejora de velocidad de ONNX (~30ms menos por inferencia) no aporta
+ningún beneficio real para quien espera la respuesta. En cambio, el
+aumento de RAM (~22%) sí tiene costo directo en el modelo de facturación
+de Railway, que es la métrica que importa priorizar en este entorno. Con
+ese balance, la versión ONNX pierde en el único eje que realmente cuenta
+acá.
+
+Si en algún momento el procesamiento vuelve a ser síncrono (ej. respuesta
+en el camino crítico de una petición HTTP donde la latencia sí importe) o
+cambia el modelo de facturación del hosting, vale la pena revisitar esta
+decisión — `scripts/exportar_modelo_onnx.py` y `scripts/consumo_ram.py`
+siguen en el repo listos para volver a generar y comparar. Para
+regenerar la versión ONNX manualmente:
+
+```powershell
+python scripts/exportar_modelo_onnx.py
+```
+
+Y para comparar RAM entre ambas versiones (modelo original vs. ONNX INT8),
+uno debajo del otro, en tu propio hardware:
+
+```powershell
+python scripts/consumo_ram.py
+```
+
+(Nota sobre `avx512_vnni` vs `avx2`: el script usa `avx2` porque asume
+hardware de producción genérico/desconocido, no necesariamente con
+soporte para la extensión Intel AVX512-VNNI. Si en el futuro se retoma
+esta optimización sobre hardware conocido con soporte VNNI, se puede
+ajustar en `scripts/exportar_modelo_onnx.py`.)
+
 ## Levantar la API de moderación
 
-Una vez que existe `model_artifacts/modelo_moderacion_final/` (generado por
-el notebook de entrenamiento, o descargado con `scripts/descargar_modelo.py`
-como se explica arriba), se puede servir ese modelo con una API FastAPI sin
-necesidad de volver a entrenar nada.
+Una vez que existe `model_artifacts/modelo_moderacion_final/` (generado
+por el notebook de entrenamiento, o descargado con
+`scripts/descargar_modelo.py` como se explica arriba), se puede servir ese
+modelo con una API FastAPI sin necesidad de volver a entrenar nada.
 
 1. Con el entorno virtual activado e instalado (pasos 1-3 de
    "Inicializar el proyecto"), levanta el servidor **desde la raíz del
@@ -189,3 +250,101 @@ necesidad de volver a entrenar nada.
 
    Los tests usan el modelo real de `model_artifacts/modelo_moderacion_final/`
    (no hay mocks), así que requieren que ese modelo ya exista.
+
+## Worker de moderación (consumidor AMQP)
+
+El procesamiento de moderación corre de forma **asíncrona**, desacoplado de
+cualquier petición HTTP: una API principal (fuera de este repo) publica
+publicaciones/reseñas pendientes de moderar en una cola de RabbitMQ
+(CloudAMQP), y este worker las consume, clasifica con BETO (y Qwen vía
+Groq si aplica), y publica el veredicto de vuelta a otra cola. **Este
+worker nunca toca la base de datos ni Firebase Cloud Messaging** — eso lo
+hace la API principal al consumir el resultado.
+
+```
+API principal  --publica-->  moderacion.pendiente  --consume-->  este worker
+(otro repo/svc)               (cola AMQP)                        (BETO + Qwen)
+
+este worker  --publica-->  moderacion.resultado  --consume-->  API principal
+                            (cola AMQP)                          (otro repo/svc)
+```
+
+Reintentos (5 intentos, luego dead-letter): si falla el procesamiento, el
+mensaje se nackea sin reencolar → cae a una cola de reintento con TTL →
+al expirar el TTL vuelve solo a `moderacion.pendiente` → se reprocesa. Al
+agotar 5 intentos (contados vía el header AMQP `x-death`), en vez de
+reintentar de nuevo se publica en `moderacion.fallidos`.
+
+**Correrlo localmente:**
+
+```powershell
+python scripts/iniciar_worker.py
+```
+
+- Carga el modelo BETO una sola vez al arrancar (reutiliza
+  `src/models/beto_classifier.py`, el mismo módulo que usa la API HTTP —
+  no hay una segunda copia de esa lógica).
+- Declara toda la topología de RabbitMQ (exchange, colas, dead-letter) por
+  su cuenta al conectarse; no hace falta crearla a mano en CloudAMQP.
+- Al recibir `SIGINT`/`SIGTERM` (`Ctrl+C`, o la señal que manda el
+  orquestador al desplegar), termina de procesar el mensaje en curso antes
+  de cerrar la conexión — no corta a la mitad.
+
+**Variables de entorno** (en tu `.env`, ver `.env.example`):
+
+- `AMQP_URL` — **requerido**, sin valor por defecto. El worker falla
+  explícitamente al arrancar (con un mensaje claro) si no está definida.
+  Es el connection string de tu instancia de CloudAMQP
+  (`amqps://usuario:password@host.cloudamqp.com/vhost`).
+- `NOMBRE_EXCHANGE` (default `moderacion`), `COLA_ENTRADA` (default
+  `moderacion.pendiente`), `COLA_SALIDA` (default `moderacion.resultado`),
+  `COLA_FALLIDOS` (default `moderacion.fallidos`) — nombres de la
+  topología; normalmente no hace falta tocarlos.
+- `PREFETCH_COUNT` (default `4`) — cuántos mensajes sin confirmar puede
+  tener el worker en vuelo a la vez. Cada mensaje puede tardar desde
+  milisegundos (si solo decide BETO) hasta unos segundos (si consulta a
+  Qwen vía Groq); 4 da algo de concurrencia en las esperas de red de Qwen
+  sin acumular demasiados mensajes sin-ack de golpe.
+- `MAX_REINTENTOS` (default `5`) y `TTL_REINTENTO_MS` (default `10000`,
+  10s) — la política de reintentos acordada.
+
+**Esquema del mensaje de entrada** (`moderacion.pendiente`, lo publica la
+API principal):
+
+```json
+{
+  "publicacion_id": "string o UUID, requerido",
+  "texto": "string, requerido, no vacío",
+  "campo": "resena | descripcion (opcional, solo para trazabilidad)"
+}
+```
+
+**Esquema del mensaje de salida** (`moderacion.resultado`, lo publica este
+worker):
+
+```json
+{
+  "publicacion_id": "el mismo ID recibido",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": { "probabilidad": 0.02, "activado": false },
+    "amenaza": { "probabilidad": 0.01, "activado": false },
+    "inapropiado": { "probabilidad": 0.05, "activado": false }
+  },
+  "verificado_por_qwen": false,
+  "detalle_verificacion": [],
+  "timestamp_procesado": "2026-07-18T20:23:35.867399"
+}
+```
+
+**Tests**: `pytest tests/test_worker.py` — mockean la conexión AMQP y el
+modelo BETO, no requieren RabbitMQ real corriendo. El mecanismo de
+reintentos (TTL + dead-letter-exchange, con recuento vía el header
+`x-death`) también se validó a mano contra un CloudAMQP real durante el
+desarrollo de este worker.
+
+**Nota sobre lo que NO implementa este repo**: el caso de uso del lado de
+la API principal que publica en `moderacion.pendiente`, y el consumidor
+de `moderacion.resultado` que actualiza la base de datos y dispara la
+notificación FCM, viven en otro servicio/repo — quedan fuera del alcance
+de este proyecto.

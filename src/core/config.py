@@ -18,6 +18,11 @@ load_dotenv(PROJECT_ROOT / ".env")
 MODEL_ARTIFACTS_DIR = PROJECT_ROOT / "model_artifacts"
 RUTA_MODELO_BETO = MODEL_ARTIFACTS_DIR / "modelo_moderacion_final"
 
+# Version exportada a ONNX + cuantizada a INT8 (ver
+# scripts/exportar_modelo_onnx.py) -- la que carga la API en produccion por
+# defecto, para reducir RAM y tiempo de inferencia en CPU (sin GPU).
+RUTA_MODELO_BETO_ONNX = MODEL_ARTIFACTS_DIR / "modelo_moderacion_final_onnx_int8"
+
 # Registro persistente (JSONL) de posibles inconsistencias
 # razonamiento/veredicto detectadas en la verificacion con Qwen -- ver
 # src/models/qwen_verifier.py y training/scripts/analizar_auditoria_qwen.py.
@@ -54,3 +59,27 @@ QWEN_MODEL_NAME = os.environ.get("QWEN_MODEL_NAME", "qwen/qwen3.6-27b")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY") or None
 
 HF_TOKEN = os.environ.get("HF_TOKEN") or None
+
+# --- Worker de moderacion (consumidor AMQP) --------------------------------
+# Sin valor por defecto a proposito: el worker (src/worker/consumidor.py)
+# debe fallar explicitamente al arrancar si esto no esta definido. NO se
+# valida aqui (este modulo tambien lo importa la API principal, que no
+# necesita AMQP para funcionar) -- la validacion vive en el worker.
+AMQP_URL = os.environ.get("AMQP_URL")
+
+NOMBRE_EXCHANGE = os.environ.get("NOMBRE_EXCHANGE", "moderacion")
+COLA_ENTRADA = os.environ.get("COLA_ENTRADA", "moderacion.pendiente")
+COLA_SALIDA = os.environ.get("COLA_SALIDA", "moderacion.resultado")
+COLA_FALLIDOS = os.environ.get("COLA_FALLIDOS", "moderacion.fallidos")
+
+# Cada mensaje puede tardar desde milisegundos (si solo decide BETO) hasta
+# unos segundos (si se consulta a Qwen via Groq) -- un prefetch moderado
+# deja algo de pipeline en vuelo sin acumular demasiados mensajes sin-ack
+# en un solo worker si varios caen en zona dudosa a la vez.
+PREFETCH_COUNT = int(os.environ.get("PREFETCH_COUNT", "4"))
+
+# Politica de reintentos (ver src/worker/consumidor.py para el patron
+# TTL + dead-letter-exchange completo): cuantos intentos antes de mandar
+# el mensaje a COLA_FALLIDOS, y cuanto esperar entre cada reintento.
+MAX_REINTENTOS = int(os.environ.get("MAX_REINTENTOS", "5"))
+TTL_REINTENTO_MS = int(os.environ.get("TTL_REINTENTO_MS", "10000"))

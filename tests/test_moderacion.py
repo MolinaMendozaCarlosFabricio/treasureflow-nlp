@@ -32,6 +32,21 @@ def test_health_confirma_modelo_cargado(client):
     assert isinstance(cuerpo["qwen_habilitado"], bool)
 
 
+def test_beto_carga_el_modelo_original_de_pytorch(client):
+    # Decision de arquitectura (ver src/models/beto_classifier.py y README):
+    # se evaluo la version ONNX+INT8 pero se descarto porque consumia mas
+    # RAM (~850MB vs ~700MB) sin aportar beneficio real, dado que la
+    # moderacion ahora corre async via un worker de cola, no en el camino
+    # critico de una peticion HTTP. La API sigue sirviendo el modelo
+    # original en PyTorch (no la version ONNX).
+    from optimum.onnxruntime import ORTModelForSequenceClassification
+    from transformers import PreTrainedModel
+
+    modelo_cargado = client.app.state.beto.model
+    assert isinstance(modelo_cargado, PreTrainedModel)
+    assert not isinstance(modelo_cargado, ORTModelForSequenceClassification)
+
+
 def test_texto_neutro_permite(client):
     respuesta = client.post(
         "/moderar",

@@ -3,6 +3,19 @@
 Carga el modelo ya entrenado y validado en model_artifacts/modelo_moderacion_final
 (ver training/notebooks/NLP_treasureflow.ipynb) -- este modulo NUNCA entrena ni
 modifica esos artefactos, solo los consume para inferencia.
+
+NOTA (decision de arquitectura): se evaluo exportar este modelo a ONNX +
+cuantizacion dinamica INT8 (ver scripts/exportar_modelo_onnx.py) para
+reducir RAM y tiempo de inferencia en el despliegue de produccion en CPU.
+Al medir el impacto real se encontro que la version ONNX consume MAS RAM
+que este modelo original en PyTorch (~850MB vs ~700MB, +22%) -- y como el
+procesamiento de moderacion corre de forma asincrona via un worker
+consumidor de cola (no en el camino critico de una peticion HTTP), la
+mejora de velocidad de ONNX (~30ms menos por inferencia) no aporta ningun
+beneficio real, mientras que el aumento de RAM si tiene costo directo en
+el modelo de facturacion de Railway. Por eso se decidio NO usar la
+version ONNX en produccion y seguir cargando aqui el modelo original en
+PyTorch. Ver README.md para el detalle de la comparacion medida.
 """
 
 import logging
