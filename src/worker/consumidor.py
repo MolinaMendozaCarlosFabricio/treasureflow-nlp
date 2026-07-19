@@ -168,6 +168,12 @@ async def _manejar_mensaje(
 ) -> None:
     cuerpo_crudo = mensaje.body
 
+    # Log inmediato al recibir, antes de validar/procesar -- sin esto, el
+    # primer log que se veia era ya el resultado (exito, rechazo o falla),
+    # sin forma de distinguir "no llego nada" de "llego algo y esta
+    # atorado procesandolo" (ej. una consulta a Qwen vía Groq que tarda).
+    logger.info("Mensaje recibido (%d bytes)", len(cuerpo_crudo))
+
     try:
         datos = json.loads(cuerpo_crudo.decode("utf-8"))
         mensaje_entrada = MensajeEntrada.model_validate(datos)
@@ -177,6 +183,8 @@ async def _manejar_mensaje(
             mensaje, exchange_fallidos, cuerpo_crudo, motivo="mensaje mal formado"
         )
         return
+
+    logger.info("Mensaje validado, publicacion_id=%s -- procesando...", mensaje_entrada.publicacion_id)
 
     try:
         resultado = await procesar_mensaje(mensaje_entrada, beto)
