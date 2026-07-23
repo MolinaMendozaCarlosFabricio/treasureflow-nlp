@@ -47,10 +47,13 @@ _REPETICIONES = re.compile(r"([a-zA-Z])\1{2,}")
 _SEPARADORES_INTERCALADOS = re.compile(r"\b(?:[a-zA-Z][ .\-]){2,}[a-zA-Z]\b")
 _SEPARADOR_SUELTO = re.compile(r"[ .\-]")
 
-# Paso 5: mapeo leetspeak NO ambiguo. Se aplica por token (separado por
-# espacios) y solo si el token mezcla letras con alguno de estos
-# caracteres -- un token puramente numerico o simbolico (fechas,
-# cantidades, precios) se deja intacto.
+# Paso 4 (ya no hay lowercase global, ver normalizar_texto): mapeo
+# leetspeak NO ambiguo. Se aplica por token (separado por espacios) y solo
+# si el token mezcla letras con alguno de estos caracteres -- un token
+# puramente numerico o simbolico (fechas, cantidades, precios) se deja
+# intacto. Los digitos/simbolos no tienen "caso" propio, asi que la
+# sustitucion respeta si el token esta en MAYUSCULAS (ej. "C4BR0N" ->
+# "CABRON") o no (por defecto, minuscula: "c4br0n" -> "cabron").
 _MAPEO_LEETSPEAK = {
     "0": "o",
     "3": "e",
@@ -59,6 +62,7 @@ _MAPEO_LEETSPEAK = {
     "@": "a",
     "$": "s",
 }
+_MAPEO_LEETSPEAK_MAYUSCULAS = {clave: valor.upper() for clave, valor in _MAPEO_LEETSPEAK.items()}
 
 
 def _quitar_diacriticos(texto: str) -> str:
@@ -89,9 +93,46 @@ def _sustituir_leetspeak(texto: str) -> str:
     def _sustituir_token(token: str) -> str:
         if not _token_mezcla_letras_y_leetspeak(token):
             return token
-        return "".join(_MAPEO_LEETSPEAK.get(caracter, caracter) for caracter in token)
+        mapeo = _MAPEO_LEETSPEAK_MAYUSCULAS if token.isupper() else _MAPEO_LEETSPEAK
+        return "".join(mapeo.get(caracter, caracter) for caracter in token)
 
     return " ".join(_sustituir_token(token) for token in texto.split())
+
+
+def _tiene_digito_y_letra_mezclados(texto: str) -> bool:
+    def _token_mezcla(token: str) -> bool:
+        return any(caracter.isalpha() for caracter in token) and any(
+            caracter.isdigit() for caracter in token
+        )
+
+    return any(_token_mezcla(token) for token in texto.split())
+
+
+def texto_parece_ofuscado(texto: str) -> bool:
+    """Heuristica para decidir si vale la pena pagar el costo de una segunda
+    pasada por el modelo con normalizar_texto() (ver beto_classifier.py).
+
+    Se detecto (docs/prueba_1.txt) que normalizar SIEMPRE, incluso texto
+    limpio sin ninguna senal de ofuscacion, y tomar el maximo entre ambas
+    versiones amplificaba falsos positivos cuando el modelo reaccionaba de
+    forma inesperada a la version normalizada (ej. "Botellas de plástico"
+    -> "grosero" 0.07 original vs 0.96 normalizado, sin que el texto
+    tuviera nada de ofuscado). Por eso ahora solo se corre la segunda
+    pasada si el texto realmente muestra alguna señal de ofuscacion
+    intencional:
+
+    - Digitos mezclados con letras dentro de la misma palabra (ej.
+      "3stup1do", "pvt0s").
+    - 3+ letras individuales seguidas separadas por espacio, punto o guion
+      (ej. "p u t o", "p.u.t.o") -- mismo patron que usa la normalizacion
+      para colapsar separadores intercalados.
+    - 3+ repeticiones consecutivas del mismo caracter (ej. "puuuuuto").
+    """
+    return (
+        _tiene_digito_y_letra_mezclados(texto)
+        or bool(_SEPARADORES_INTERCALADOS.search(texto))
+        or bool(_REPETICIONES.search(texto))
+    )
 
 
 def normalizar_texto(texto: str) -> str:
@@ -99,14 +140,24 @@ def normalizar_texto(texto: str) -> str:
     ofuscacion de palabras prohibidas. Aplica, en orden:
 
     1. NFKD + eliminacion de diacriticos (acentos, algunos homoglifos).
-    2. lowercase.
-    3. Colapso de letras repetidas 3+ veces seguidas -> 2.
-    4. Colapso de letras individuales separadas por '.', '-' o espacio.
-    5. Sustitucion leetspeak (0/3/4/7/@/$) solo en tokens que mezclan
+    2. Colapso de letras repetidas 3+ veces seguidas -> 2.
+    3. Colapso de letras individuales separadas por '.', '-' o espacio.
+    4. Sustitucion leetspeak (0/3/4/7/@/$) solo en tokens que mezclan
        letras con esos caracteres.
+
+    NO fuerza lowercase (a diferencia de un diseno anterior): se detecto
+    que el modelo BETO usado para clasificar es sensible a mayusculas/
+    minusculas de una forma inesperada -- texto normal correctamente
+    capitalizado, al forzarlo a minusculas, podia dispararle una
+    probabilidad de "grosero" muchisimo mas alta sin relacion con el
+    contenido real (ej. "Botellas de plástico" -> "grosero" bajo con
+    mayuscula, pero >0.75 en minusculas). Ninguna de las reglas de abajo
+    necesita lowercase para funcionar (todas usan clases de regex
+    case-insensitive o comparan caracteres individuales), asi que
+    quitarlo elimina esa amplificacion de falsos positivos sin debilitar
+    la deteccion de ofuscacion.
     """
     texto = _quitar_diacriticos(texto)
-    texto = texto.lower()
     texto = _colapsar_repeticiones(texto)
     texto = _colapsar_separadores_intercalados(texto)
     texto = _sustituir_leetspeak(texto)

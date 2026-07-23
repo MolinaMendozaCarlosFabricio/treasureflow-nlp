@@ -1,9 +1,9 @@
 """Logica de orquestacion de la moderacion de contenido.
 
 Corre BETO, decide si alguna categoria cayo en su zona dudosa (umbral +/-
-el margen de esa categoria en MARGENES_POR_CATEGORIA) y en ese caso
-consulta a Qwen para confirmar o descartar esa categoria puntual, sin
-tocar las que ya son claras.
+los margenes asimetricos de esa categoria en MARGENES_POR_CATEGORIA) y en
+ese caso consulta a Qwen para confirmar o descartar esa categoria
+puntual, sin tocar las que ya son claras.
 """
 
 import logging
@@ -15,8 +15,11 @@ from src.models.qwen_verifier import esta_disponible, verificar_con_qwen
 logger = logging.getLogger("moderacion.logic")
 
 
-def en_zona_dudosa(probabilidad: float, umbral: float, margen: float) -> bool:
-    return abs(probabilidad - umbral) <= margen
+def esta_en_zona_dudosa(probabilidad: float, umbral: float, categoria: str) -> bool:
+    margenes = MARGENES_POR_CATEGORIA[categoria]
+    limite_inferior = umbral - margenes["inferior"]
+    limite_superior = umbral + margenes["superior"]
+    return limite_inferior <= probabilidad <= limite_superior
 
 
 async def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
@@ -38,9 +41,8 @@ async def moderar_texto(texto: str, beto: ClasificadorBeto) -> dict:
         for nombre in LABEL_COLUMNS:
             probabilidad = resultado_beto.probabilidades[nombre]
             umbral = UMBRALES_POR_CATEGORIA[nombre]
-            margen = MARGENES_POR_CATEGORIA[nombre]
 
-            if not en_zona_dudosa(probabilidad, umbral, margen):
+            if not esta_en_zona_dudosa(probabilidad, umbral, nombre):
                 continue
 
             confirma, razon = await verificar_con_qwen(texto, nombre, probabilidad)

@@ -27,7 +27,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.core.config import LABEL_COLUMNS, RUTA_MODELO_BETO, UMBRALES_POR_CATEGORIA
-from src.utils.normalizacion import normalizar_texto
+from src.utils.normalizacion import normalizar_texto, texto_parece_ofuscado
 
 logger = logging.getLogger("moderacion.beto")
 
@@ -76,22 +76,32 @@ class ClasificadorBeto:
         return {nombre: float(probs[i]) for i, nombre in enumerate(LABEL_COLUMNS)}
 
     def predict(self, texto: str) -> ResultadoBeto:
-        """Infiere sobre el texto original Y sobre su version normalizada
-        (ver utils.normalizacion.normalizar_texto), para ser robustos a
-        ofuscacion (leetspeak, espaciado, separadores intercalados). El
-        resultado final por categoria es el MAXIMO de ambas probabilidades,
-        nunca un promedio -- si cualquiera de las dos versiones detecta
-        algo sospechoso, eso se refleja en el resultado."""
+        """Infiere sobre el texto original y, SOLO si texto_parece_ofuscado()
+        detecta alguna señal de ofuscacion intencional (leetspeak, espaciado,
+        separadores intercalados, repeticiones), tambien sobre su version
+        normalizada (ver utils.normalizacion.normalizar_texto), tomando el
+        MAXIMO de ambas probabilidades por categoria.
+
+        Texto sin señales de ofuscacion se evalua UNICAMENTE en su forma
+        original: normalizar siempre, incluso texto limpio, demostro
+        amplificar falsos positivos cuando el modelo reaccionaba de forma
+        inesperada a la version normalizada de texto que no tenia nada de
+        ofuscado (ver texto_parece_ofuscado)."""
         inicio = time.perf_counter()
 
         probabilidades_original = self._inferir_probabilidades(texto)
 
-        texto_normalizado = normalizar_texto(texto)
-        if texto_normalizado != texto:
-            probabilidades_normalizado = self._inferir_probabilidades(texto_normalizado)
+        if texto_parece_ofuscado(texto):
+            texto_normalizado = normalizar_texto(texto)
+            if texto_normalizado != texto:
+                probabilidades_normalizado = self._inferir_probabilidades(texto_normalizado)
+            else:
+                # La normalizacion no cambio nada -- evitamos una segunda
+                # pasada por el modelo con el mismo texto.
+                probabilidades_normalizado = probabilidades_original
         else:
-            # La normalizacion no cambio nada -- evitamos una segunda
-            # pasada por el modelo con el mismo texto.
+            # Sin señales de ofuscacion: no vale la pena (ni es seguro,
+            # ver docstring) correr una segunda pasada normalizada.
             probabilidades_normalizado = probabilidades_original
 
         probabilidades = {}

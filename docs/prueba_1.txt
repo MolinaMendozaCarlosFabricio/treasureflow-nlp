@@ -1,0 +1,790 @@
+{
+  "texto": "Pésimo servicio, la señora de recepción es una grosera de mierda",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.9942,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0266,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0238,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0238,
+      "confirma": false,
+      "razon": "El texto contiene lenguaje vulgar y ofensivo directo, pero carece de insinuaciones sexuales o dobles sentidos que definen la categoria inapropiado"
+    }
+  ]
+}
+
+{
+  "texto": "Pvt0s malditos este lugar no funciona nunca",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.9925,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0306,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0146,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0146,
+      "confirma": false,
+      "razon": "El texto expresa frustración y queja sobre el funcionamiento del lugar, sin contener insinuaciones sexuales ni dobles sentidos."
+    }
+  ]
+}
+
+{
+  "texto": "p e n d e j o este lugar no sirve",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.9006,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0138,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0094,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0094,
+      "confirma": false,
+      "razon": "El texto contiene lenguaje vulgar y ofensivo, pero carece de insinuación sexual o doble sentido según la definición proporcionada."
+    }
+  ]
+}
+
+{
+  "texto": "hola",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0157,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0102,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0191,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0191,
+      "confirma": false,
+      "razon": "El texto es un saludo estándar sin ninguna insinuación sexual o doble sentido."
+    }
+  ]
+}
+
+{
+  "texto": "Maderita",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.2496,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0092,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0301,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "grosero",
+      "probabilidad_beto": 0.2496,
+      "confirma": false,
+      "razon": "El termino es un diminutivo coloquial y no constituye un insulto directo ni vocabulario vulgar con intencion de ofender"
+    },
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0301,
+      "confirma": false,
+      "razon": "El termino es un diminutivo coloquial para madera, sin connotaciones sexuales ni dobles sentidos en este contexto"
+    }
+  ]
+}
+
+{
+  "texto": "xd",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0221,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0078,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0212,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0212,
+      "confirma": false,
+      "razon": "El texto es una abreviatura común de risa y no contiene insinuaciones sexuales ni dobles sentidos"
+    }
+  ]
+}
+
+{
+  "texto": "0w0",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.5832,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0048,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0079,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0079,
+      "confirma": false,
+      "razon": "El texto es un emoticono facial sin contenido sexual ni doble sentido"
+    }
+  ]
+}
+
+{
+  "texto": "Botellas de plástico",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.9639,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0101,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0301,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0301,
+      "confirma": false,
+      "razon": "El texto es una descripcion literal y neutra de un material reciclable sin ningun doble sentido o insinuacion sexual"
+    }
+  ]
+}
+
+{
+  "texto": "cartón",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0202,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0099,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0401,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0401,
+      "confirma": false,
+      "razon": "El texto es un termino literal para un material reciclable sin ningun doble sentido o insinuacion sexual"
+    }
+  ]
+}
+
+{
+  "texto": "gracias",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0194,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0094,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0176,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0176,
+      "confirma": false,
+      "razon": "El texto es una expresión de cortesía estándar sin insinuaciones sexuales ni dobles sentidos."
+    }
+  ]
+}
+
+{
+  "texto": "Como no me paguen lo justo voy a ir a partirle la madre al encargado",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.1052,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.9917,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.1291,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.1291,
+      "confirma": false,
+      "razon": "La frase expresa una amenaza de violencia física o frustración extrema mediante un insulto vulgar, pero carece de insinuación sexual o doble sentido erótico."
+    }
+  ]
+}
+
+{
+  "texto": "Sigan asi de descuidados y ya veran las consecuencias que les esperan",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.9329,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.8964,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0143,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0143,
+      "confirma": false,
+      "razon": "El texto expresa una amenaza o advertencia agresiva, pero carece de insinuaciones sexuales o dobles sentidos."
+    }
+  ]
+}
+
+{
+  "texto": "Voy a poner una queja formal ante PROFECO porque me pesaron mal el material",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0223,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0811,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0131,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0131,
+      "confirma": false,
+      "razon": "El texto es una queja administrativa directa sobre un error de pesaje sin insinuaciones sexuales ni dobles sentidos"
+    }
+  ]
+}
+
+{
+  "texto": "Ahí les va la fiscalía a estos perros que no pagan",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.9482,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.9836,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.056,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.056,
+      "confirma": false,
+      "razon": "El texto es una queja sobre evasión fiscal y usa lenguaje coloquial ofensivo, pero carece de insinuación sexual o doble sentido."
+    }
+  ]
+}
+
+{
+  "texto": "Qué bonito perro",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0753,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0056,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0361,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0361,
+      "confirma": false,
+      "razon": "La frase es un comentario literal y benigno sobre una mascota, sin insinuaciones sexuales ni dobles sentidos."
+    }
+  ]
+}
+
+{
+  "texto": "Botellas disponibles, cualquier cosa me buscas 😉 vengo solo",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0092,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0224,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.3188,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": false,
+  "detalle_verificacion": []
+}
+
+{
+  "texto": "está caliente",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.061,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0527,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.9531,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": false,
+  "detalle_verificacion": []
+}
+
+{
+  "texto": "estoy caliente",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.065,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.049,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.9543,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": false,
+  "detalle_verificacion": []
+}
+
+{
+  "texto": "estoy hot",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.74,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0042,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.015,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.015,
+      "confirma": true,
+      "razon": "El termino hot se usa coloquialmente para referirse a atractivo sexual o excitacion, lo cual constituye una insinuacion sexual directa"
+    }
+  ]
+}
+
+{
+  "texto": "agua caliente",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0258,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0108,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.2659,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.2659,
+      "confirma": false,
+      "razon": "El texto es una descripción literal de un estado físico del agua y no contiene insinuaciones sexuales ni dobles sentidos en este contexto"
+    }
+  ]
+}
+
+{
+  "texto": "Tengo casa sola, vengan traviesos 😘",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0103,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0119,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0678,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0678,
+      "confirma": true,
+      "razon": "La frase combina la vulnerabilidad de estar sola con la invitacion a personas calificadas como traviesas y un emoji de beso, creando una insinuacion sexual clara y doble sentido."
+    }
+  ]
+}
+
+{
+  "texto": "Excelente servicio, muy amables y rápidos",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0182,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0115,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0234,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0234,
+      "confirma": false,
+      "razon": "El texto es una reseña positiva estándar sin insinuaciones sexuales ni dobles sentidos"
+    }
+  ]
+}
+
+{
+  "texto": "El clima está horrible hoy, no hay quien salga a reciclar",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0257,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.0351,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "inapropiado": {
+      "probabilidad": 0.0135,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0135,
+      "confirma": false,
+      "razon": "El texto es una queja literal sobre el clima y no contiene insinuaciones sexuales ni dobles sentidos."
+    }
+  ]
+}
+
+{
+  "texto": "Ofrezco unas latas de aluminio, los pueden recoger en mi casa",
+  "bloqueado": false,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0072,
+      "activado": false,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.0474,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0862,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0862,
+      "confirma": false,
+      "razon": "El texto es una oferta directa y literal de reciclaje sin insinuaciones sexuales ni dobles sentidos"
+    }
+  ]
+}
+
+{
+  "texto": "Si me ayudas a cargar el material te dejo pasar a conocer mi casa completa",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.0099,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    },
+    "amenaza": {
+      "probabilidad": 0.7394,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.2116,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.2116,
+      "confirma": true,
+      "razon": "La oferta de dejar pasar a alguien a conocer la casa completa a cambio de ayuda física sugiere una recompensa personal o sexual, lo que constituye una insinuación clara."
+    }
+  ]
+}
+
+{
+  "texto": "Deja de molestarme con tus mensajes o vas a tener problemas serios",
+  "bloqueado": true,
+  "categorias": {
+    "grosero": {
+      "probabilidad": 0.6174,
+      "activado": true,
+      "detectado_via_normalizacion": false
+    },
+    "amenaza": {
+      "probabilidad": 0.9426,
+      "activado": true,
+      "detectado_via_normalizacion": true
+    },
+    "inapropiado": {
+      "probabilidad": 0.0293,
+      "activado": false,
+      "detectado_via_normalizacion": true
+    }
+  },
+  "verificado_por_qwen": true,
+  "detalle_verificacion": [
+    {
+      "categoria": "inapropiado",
+      "probabilidad_beto": 0.0293,
+      "confirma": false,
+      "razon": "El texto es una amenaza directa y hostil, pero carece de insinuación sexual o doble sentido según la definición proporcionada."
+    }
+  ]
+}

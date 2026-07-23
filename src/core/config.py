@@ -35,19 +35,23 @@ LABEL_COLUMNS = ["grosero", "amenaza", "inapropiado"]
 # Umbrales ya calibrados y validados con barrido sobre el set de test real.
 # No se recalculan aqui -- se usan tal cual.
 UMBRALES_POR_CATEGORIA = {
-    "grosero": 0.5,
-    "amenaza": 0.5,
-    "inapropiado": 0.30,
+    "grosero": 0.35,
+    "amenaza": 0.35,
+    "inapropiado": 0.15,
 }
 
-# Margen alrededor del umbral de cada categoria que define su "zona dudosa"
-# y dispara la verificacion opcional con Qwen. Es por categoria porque no
-# todas necesitan el mismo margen de duda (ej. amenaza justifica un margen
-# mas amplio dado el costo de un falso negativo).
+# Margenes alrededor del umbral de cada categoria que definen su "zona
+# dudosa" y disparan la verificacion opcional con Qwen. Asimetricos a
+# proposito: el costo de un falso negativo (dejar pasar algo que si era
+# grave) no es igual al de un falso positivo (bloquear algo inocuo), asi
+# que el margen "superior" (hacia probabilidades mas altas que el umbral,
+# donde dudar de menos es mas seguro) suele ser mas ancho que el
+# "inferior" -- sobre todo en amenaza/inapropiado, donde el costo de un
+# falso negativo es mayor.
 MARGENES_POR_CATEGORIA = {
-    "grosero": 0.15,
-    "amenaza": 0.20,
-    "inapropiado": 0.15,
+    "grosero": {"inferior": 0.15, "superior": 0.15},  # zona: [0.20, 0.50]
+    "amenaza": {"inferior": 0.15, "superior": 0.20},  # zona: [0.20, 0.55]
+    "inapropiado": {"inferior": 0.05, "superior": 0.20},  # zona: [0.10, 0.35]
 }
 
 MAX_LONGITUD_TEXTO = 1000

@@ -20,5 +20,5 @@ api.upload_folder(
     folder_path="model_artifacts/modelo_moderacion_final",
     repo_id="charlie-charl/treasureflow-moderation-beto",
     repo_type="model",
-    commit_message="feat: Modelo optimizado con Optuna, umbrales calibrados. v1",
+    commit_message="feat: Umbrales recalibrados del modelo entrenado con oraciones de 1-3 palabras. v3",
 )
