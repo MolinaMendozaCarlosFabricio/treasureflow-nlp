@@ -83,10 +83,34 @@ def test_mensaje_bien_formado_se_procesa_y_publica_el_resultado_esperado(monkeyp
 
     cuerpo_publicado = json.loads(mensaje_publicado.body.decode("utf-8"))
     assert cuerpo_publicado["publicacion_id"] == "pub-123"
+    assert cuerpo_publicado["campo"] == "resena"
     assert cuerpo_publicado["bloqueado"] is True
     assert cuerpo_publicado["categorias"]["grosero"]["activado"] is True
     assert cuerpo_publicado["verificado_por_qwen"] is False
     assert "timestamp_procesado" in cuerpo_publicado
+
+
+def test_mensaje_sin_campo_publica_campo_null(monkeypatch):
+    # "campo" es opcional en el mensaje de entrada (ver MensajeEntrada) --
+    # el mensaje de salida debe reflejar eso tal cual, no inventar un valor.
+    monkeypatch.setattr(logic_module, "esta_disponible", lambda: False)
+
+    beto = _beto_mock(
+        probabilidades={"grosero": 0.05, "amenaza": 0.05, "inapropiado": 0.05},
+        activaciones={"grosero": False, "amenaza": False, "inapropiado": False},
+    )
+
+    cuerpo = json.dumps({"publicacion_id": "pub-999", "texto": "texto neutro"}).encode("utf-8")
+    mensaje = _MensajeFalso(cuerpo)
+    exchange_principal, exchange_fallidos = _exchanges_falsos()
+
+    asyncio.run(
+        consumidor_module._manejar_mensaje(mensaje, beto, exchange_principal, exchange_fallidos)
+    )
+
+    _args, _kwargs = exchange_principal.publish.call_args
+    cuerpo_publicado = json.loads(_args[0].body.decode("utf-8"))
+    assert cuerpo_publicado["campo"] is None
 
 
 def test_mensaje_mal_formado_se_rechaza_sin_tumbar_el_worker():

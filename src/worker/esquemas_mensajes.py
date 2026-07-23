@@ -41,6 +41,7 @@ class MensajeEntrada(BaseModel):
 
 class MensajeSalida(BaseModel):
     publicacion_id: str
+    campo: Optional[Literal["resena", "descripcion"]] = None
     bloqueado: bool
     categorias: dict[str, ResultadoCategoria]
     verificado_por_qwen: bool

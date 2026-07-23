@@ -325,6 +325,7 @@ worker):
 ```json
 {
   "publicacion_id": "el mismo ID recibido",
+  "campo": "el mismo campo recibido en la entrada (o null si no vino)",
   "bloqueado": true,
   "categorias": {
     "grosero": { "probabilidad": 0.02, "activado": false },

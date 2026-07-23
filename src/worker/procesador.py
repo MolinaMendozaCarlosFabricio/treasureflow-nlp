@@ -25,6 +25,7 @@ async def procesar_mensaje(mensaje: MensajeEntrada, beto: ClasificadorBeto) -> M
 
     return MensajeSalida(
         publicacion_id=mensaje.publicacion_id,
+        campo=mensaje.campo,
         bloqueado=resultado["bloqueado"],
         categorias=resultado["categorias"],
         verificado_por_qwen=resultado["verificado_por_qwen"],
