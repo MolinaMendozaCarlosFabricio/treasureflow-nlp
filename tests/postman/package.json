@@ -1,0 +1,12 @@
+{
+  "name": "treasureflow-nlp-postman",
+  "private": true,
+  "description": "Coleccion Postman/Newman del microservicio de moderacion de contenido (grosero/amenaza/inapropiado). Requiere el servicio corriendo localmente (uvicorn src.main:app --reload) antes de ejecutar.",
+  "scripts": {
+    "test:postman": "newman run postman_collection.json --reporters cli,htmlextra,json --reporter-htmlextra-export reporte_resultados.html --reporter-json-export reporte_resultados.json"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}

@@ -1,0 +1,1437 @@
+{
+  "info": {
+    "_postman_id": "6b8a8234-b125-4659-951a-d1ff5910028a",
+    "name": "TreasureFlow - Moderacion de Contenido (PLN)",
+    "description": "Coleccion de pruebas del microservicio de moderacion de contenido (grosero/amenaza/inapropiado). Casos derivados de la validacion manual e iterativa del modelo BETO ajustado, documentados en el reporte de implementacion.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health check",
+      "item": [
+        {
+          "name": "GET /health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Modelo cargado\", function () { pm.expect(pm.response.json().modelo_cargado).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Groserias",
+      "item": [
+        {
+          "name": "Groseria directa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(true);",
+                  "});",
+                  "pm.test(\"grosero.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.grosero.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Pesimo servicio, la senora de recepcion es una grosera de mierda\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Groseria ofuscada - leetspeak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(true);",
+                  "});",
+                  "pm.test(\"grosero.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.grosero.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Pvt0s malditos este lugar no funciona nunca\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Groseria ofuscada - espaciado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(true);",
+                  "});",
+                  "pm.test(\"grosero.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.grosero.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"p e n d e j o este lugar no sirve\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Groseria coloquial mexicana",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(true);",
+                  "});",
+                  "pm.test(\"grosero.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.grosero.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"No mames cabron\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Amenazas (incluye regla del tono)",
+      "item": [
+        {
+          "name": "Amenaza directa de dano fisico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(true);",
+                  "});",
+                  "pm.test(\"amenaza.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.amenaza.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Como no me paguen lo justo voy a ir a partirle la madre al encargado\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Amenaza velada con advertencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(true);",
+                  "});",
+                  "pm.test(\"amenaza.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.amenaza.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Sigan asi de descuidados y ya veran las consecuencias que les esperan\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accion legitima, tono neutro (NO es amenaza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});",
+                  "pm.test(\"amenaza.activado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.amenaza.activado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Voy a poner una queja formal ante PROFECO porque me pesaron mal el material\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accion legitima, tono intimidatorio (SI es amenaza)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"amenaza.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.amenaza.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Ahi les va la fiscalia a estos perros que no pagan\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Insinuacion / doble sentido",
+      "item": [
+        {
+          "name": "Insinuacion explicita con emoji",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"inapropiado.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.inapropiado.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Tengo casa sola, vengan traviesos\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Insinuacion en contexto de intercambio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"inapropiado.activado == true\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.categorias.inapropiado.activado).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Si me ayudas a cargar el material te dejo pasar a conocer mi casa completa\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Negativos de control",
+      "item": [
+        {
+          "name": "Resena positiva neutra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Excelente servicio, muy amables y rapidos\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Queja legitima sin insulto (clima)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"El clima esta horrible hoy, no hay quien salga a reciclar\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Descripcion normal con mencion de domicilio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Ofrezco unas latas de aluminio, los pueden recoger en mi casa\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Descripcion corta normal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Botellas de plastico\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Termino literal, sin doble sentido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Agua caliente\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Robustez a texto corto",
+      "item": [
+        {
+          "name": "Saludo corto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"hola\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agradecimiento corto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"gracias\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Material suelto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"cartón\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Jerga de internet - risa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"xd\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Diminutivo coloquial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});",
+                  "pm.test(\"bloqueado == false\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.bloqueado).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Maderita\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Casos limite documentados (sin asercion de veredicto)",
+      "item": [
+        {
+          "name": "Emoticono textual poco comun (cobertura de vocabulario)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"0w0\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Palabra tabu suelta sin contexto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Sexo\",\n  \"campo\": \"descripcion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Jerga de meme sin vulgaridad real",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Momo\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Amenaza con vocabulario coloquial (categoria cruzada conocida)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respuesta tiene estructura esperada\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"bloqueado\");",
+                  "    pm.expect(json).to.have.property(\"categorias\");",
+                  "    pm.expect(json.categorias).to.have.property(\"grosero\");",
+                  "    pm.expect(json.categorias).to.have.property(\"amenaza\");",
+                  "    pm.expect(json.categorias).to.have.property(\"inapropiado\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Deja de molestarme con tus mensajes o vas a tener problemas serios\",\n  \"campo\": \"resena\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/moderar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "moderar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}

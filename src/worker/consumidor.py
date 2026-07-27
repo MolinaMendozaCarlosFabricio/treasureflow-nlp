@@ -145,8 +145,8 @@ async def _enviar_a_fallidos_o_reintentar(
 
     if intentos >= MAX_REINTENTOS:
         logger.error(
-            "Mensaje agoto %s reintentos (%s), se envia a '%s': %r",
-            MAX_REINTENTOS, motivo, COLA_FALLIDOS, cuerpo_crudo[:200],
+            "Mensaje agoto %s reintentos (%s), se envia a exchange='%s' routing_key='%s': %r",
+            MAX_REINTENTOS, motivo, COLA_FALLIDOS, COLA_FALLIDOS, cuerpo_crudo[:200],
         )
         await exchange_fallidos.publish(
             Message(body=cuerpo_crudo, delivery_mode=aio_pika.DeliveryMode.PERSISTENT),
@@ -155,7 +155,9 @@ async def _enviar_a_fallidos_o_reintentar(
         await mensaje.ack()  # ya quedo en COLA_FALLIDOS -- lo sacamos del flujo de reintentos
     else:
         logger.warning(
-            "Reintento %s/%s (%s): %r", intentos + 1, MAX_REINTENTOS, motivo, cuerpo_crudo[:200]
+            "Reintento %s/%s (%s), nack -> dead-letter-exchange='%s' -> cola='%s': %r",
+            intentos + 1, MAX_REINTENTOS, motivo, NOMBRE_EXCHANGE_REINTENTO, COLA_REINTENTO,
+            cuerpo_crudo[:200],
         )
         await mensaje.nack(requeue=False)  # cae al dead-letter-exchange de reintento
 
@@ -172,7 +174,10 @@ async def _manejar_mensaje(
     # primer log que se veia era ya el resultado (exito, rechazo o falla),
     # sin forma de distinguir "no llego nada" de "llego algo y esta
     # atorado procesandolo" (ej. una consulta a Qwen vía Groq que tarda).
-    logger.info("Mensaje recibido (%d bytes)", len(cuerpo_crudo))
+    logger.info(
+        "Mensaje recibido en cola='%s' (%d bytes): %s",
+        COLA_ENTRADA, len(cuerpo_crudo), cuerpo_crudo.decode("utf-8", errors="replace"),
+    )
 
     try:
         datos = json.loads(cuerpo_crudo.decode("utf-8"))
@@ -184,7 +189,10 @@ async def _manejar_mensaje(
         )
         return
 
-    logger.info("Mensaje validado, publicacion_id=%s -- procesando...", mensaje_entrada.publicacion_id)
+    logger.info(
+        "Payload de entrada validado, publicacion_id=%s -- procesando: %s",
+        mensaje_entrada.publicacion_id, mensaje_entrada.model_dump(),
+    )
 
     try:
         resultado = await procesar_mensaje(mensaje_entrada, beto)
@@ -197,6 +205,10 @@ async def _manejar_mensaje(
         )
         return
 
+    logger.info(
+        "Publicando resultado en exchange='%s' routing_key='%s': %s",
+        NOMBRE_EXCHANGE, COLA_SALIDA, resultado.model_dump(),
+    )
     await exchange_principal.publish(
         Message(
             body=resultado.model_dump_json().encode("utf-8"),

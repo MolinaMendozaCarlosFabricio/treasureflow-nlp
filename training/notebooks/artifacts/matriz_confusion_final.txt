@@ -3,14 +3,14 @@ Matrices de confusion -- split: TEST (modelo final optimizado)
 --- grosero ---
         Pred 0   Pred 1
 Real 0     129       11
-Real 1      18       65
+Real 1      16       67
 
 --- amenaza ---
         Pred 0   Pred 1
-Real 0     202        3
+Real 0     199        6
 Real 1       8       10
 
 --- inapropiado ---
         Pred 0   Pred 1
-Real 0     209        3
-Real 1       8        3
+Real 0     203        9
+Real 1       5        6
